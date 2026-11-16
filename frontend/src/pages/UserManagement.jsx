@@ -459,7 +459,7 @@ function UserManagement({ currentUser }) {
                           </button>
                         </div>
                         <div className="permission-implementation-note">
-                          Some modules are placeholders: Documents and Calendar have no data APIs yet, and Request/Approval delete actions are not connected. Those saved settings do not grant an operation until its API exists.
+                          Request review requires Requests: Update plus Approvals: Create and Update. Documents and Calendar do not have data APIs yet, and Request/Approval delete actions are not connected; those saved settings cannot perform operations until their APIs exist.
                         </div>
                         <div className="permission-card-grid">
                           {Object.entries(selectedPermissionRole.permissions).map(([resource, actions]) => (
