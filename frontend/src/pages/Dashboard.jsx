@@ -1,10 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   createRequest,
+  generateAgenda,
   getRequests,
   reviewRequest,
 } from '../services/requestService.js'
 import { getCurrentUser } from '../services/authService.js'
+import { getAvailability, getScheduleRecommendations } from '../services/calendarService.js'
+import Calendar from './Calendar.jsx'
+import Documents from './Documents.jsx'
 import UserManagement from './UserManagement.jsx'
 
 const navigation = [
@@ -16,13 +20,19 @@ const navigation = [
   { id: 'users', label: 'Users', icon: '♙', permission: ['users', 'read'] },
 ]
 
-const initialForm = { type: 'MEETING', title: '', topic: '', description: '' }
+const initialForm = { title: '', topic: '', description: '', meetingDate: '', meetingStart: '', agenda: null }
+
+function getTodayDate() {
+  const date = new Date()
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+}
+
 function formatDate(value) {
   return new Intl.DateTimeFormat(undefined, {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
-  }).format(new Date(value))
+  }).format(new Date(`${String(value).slice(0, 10)}T12:00:00`))
 }
 
 function Dashboard({ user, onUserUpdate, onSignOut }) {
@@ -34,6 +44,12 @@ function Dashboard({ user, onUserUpdate, onSignOut }) {
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [form, setForm] = useState(initialForm)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [availableSlots, setAvailableSlots] = useState([])
+  const [availabilityWarning, setAvailabilityWarning] = useState('')
+  const [isAvailabilityLoading, setIsAvailabilityLoading] = useState(false)
+  const [scheduleRecommendations, setScheduleRecommendations] = useState([])
+  const [isScheduleGenerating, setIsScheduleGenerating] = useState(false)
+  const [isAgendaGenerating, setIsAgendaGenerating] = useState(false)
   const [workingRequestId, setWorkingRequestId] = useState(null)
   const isTeacher = user.role === 'TEACHER'
   const hasPermission = (resource, action, fallback = false) => (
@@ -47,6 +63,8 @@ function Dashboard({ user, onUserUpdate, onSignOut }) {
   const canReadApprovals = hasPermission('approvals', 'read', canReview) && canReadRequests
   const canReadDocuments = hasPermission('documents', 'read', true)
   const canReadCalendar = hasPermission('calendar', 'read', true)
+  const canCreateBrief = hasPermission('documents', 'create')
+  const canSyncMeetings = hasPermission('calendar', 'create', ['MANAGER', 'ADMIN', 'SUPERADMIN'].includes(user.role))
   const canManageUsers = hasPermission('users', 'read', ['ADMIN', 'SUPERADMIN'].includes(user.role))
 
   useEffect(() => {
@@ -105,6 +123,31 @@ function Dashboard({ user, onUserUpdate, onSignOut }) {
     }
   }, [canReadRequests])
 
+  useEffect(() => {
+    if (!isCreateOpen || !form.meetingDate) return undefined
+
+    let isActive = true
+    getAvailability(form.meetingDate)
+      .then((data) => {
+        if (!isActive) return
+        setAvailableSlots(data.slots)
+        setAvailabilityWarning(data.warning || '')
+      })
+      .catch((availabilityError) => {
+        if (isActive) {
+          setAvailableSlots([])
+          setError(availabilityError.message || 'Unable to check meeting availability.')
+        }
+      })
+      .finally(() => {
+        if (isActive) setIsAvailabilityLoading(false)
+      })
+
+    return () => {
+      isActive = false
+    }
+  }, [form.meetingDate, isCreateOpen])
+
   const pendingCount = useMemo(
     () => requests.filter((request) => request.status === 'PENDING').length,
     [requests],
@@ -129,10 +172,18 @@ function Dashboard({ user, onUserUpdate, onSignOut }) {
     setSuccessMessage('')
     setIsSubmitting(true)
     try {
-      await createRequest(form)
+      await createRequest({
+        type: 'MEETING',
+        title: form.title,
+        topic: form.topic,
+        description: form.description,
+        meetingDate: form.meetingDate,
+        meetingStart: form.meetingStart,
+        ...(form.agenda ? { agenda: form.agenda } : {}),
+      })
       setForm(initialForm)
       setIsCreateOpen(false)
-      setSuccessMessage('Your request was submitted successfully.')
+      setSuccessMessage('Your meeting request was submitted. The selected time is held until it is approved or rejected.')
       if (canReadRequests) {
         setActivePage('requests')
         await loadRequests()
@@ -146,13 +197,58 @@ function Dashboard({ user, onUserUpdate, onSignOut }) {
     }
   }
 
+  const handleGenerateAgenda = async () => {
+    setError('')
+    setIsAgendaGenerating(true)
+    try {
+      const result = await generateAgenda({
+        title: form.title,
+        topic: form.topic,
+        description: form.description,
+      })
+      setForm((previous) => ({ ...previous, agenda: result.agenda }))
+    } catch (agendaError) {
+      setError(agendaError.message || 'Unable to generate an agenda.')
+    } finally {
+      setIsAgendaGenerating(false)
+    }
+  }
+
+  const handleGenerateSchedule = async () => {
+    setError('')
+    setIsScheduleGenerating(true)
+    try {
+      const result = await getScheduleRecommendations({
+        date: form.meetingDate,
+        title: form.title,
+        topic: form.topic,
+        description: form.description,
+      })
+      setScheduleRecommendations(result.recommendations)
+    } catch (scheduleError) {
+      setScheduleRecommendations([])
+      setError(scheduleError.message || 'Unable to recommend an available meeting time.')
+    } finally {
+      setIsScheduleGenerating(false)
+    }
+  }
+
+  const updateMeetingDetails = (field, value) => {
+    setForm((previous) => ({
+      ...previous,
+      [field]: value,
+      ...(['title', 'topic', 'description'].includes(field) ? { agenda: null } : {}),
+    }))
+    setScheduleRecommendations([])
+  }
+
   const handleReview = async (requestId, status) => {
     setError('')
     setSuccessMessage('')
     setWorkingRequestId(requestId)
     try {
-      await reviewRequest(requestId, status)
-      setSuccessMessage(`Request ${status.toLowerCase()} successfully.`)
+      const result = await reviewRequest(requestId, status)
+      setSuccessMessage(result.warning || `Request ${status.toLowerCase()} successfully.`)
       await loadRequests()
     } catch (reviewError) {
       setError(reviewError.message || 'Unable to update this request.')
@@ -163,6 +259,18 @@ function Dashboard({ user, onUserUpdate, onSignOut }) {
 
   const handleNavigate = (page) => {
     setActivePage(page)
+  }
+
+  const openNewMeetingRequest = (slot = null) => {
+    setForm({
+      ...initialForm,
+      meetingDate: slot?.date || getTodayDate(),
+      meetingStart: slot?.start || '',
+    })
+    setIsAvailabilityLoading(true)
+    setScheduleRecommendations([])
+    setError('')
+    setIsCreateOpen(true)
   }
 
   const pageTitle = {
@@ -237,8 +345,8 @@ function Dashboard({ user, onUserUpdate, onSignOut }) {
               </p>
             </div>
             {canCreateRequest && (
-              <button className="primary-action" type="button" onClick={() => setIsCreateOpen(true)}>
-                <span aria-hidden="true">+</span> New request
+              <button className="primary-action" type="button" onClick={() => openNewMeetingRequest()}>
+                <span aria-hidden="true">+</span> Request a meeting
               </button>
             )}
 
@@ -342,22 +450,14 @@ function Dashboard({ user, onUserUpdate, onSignOut }) {
           )}
 
           {activePage === 'documents' && canReadDocuments && (
-            <IntegrationPlaceholder
-              icon="▤"
-              title="Document workflows are not connected yet"
-              description="Document requests are saved in the Requests area. PDF uploads, Google Forms/Sheets, and Gemini analysis need their backend integrations before documents can appear here."
-              action={() => setActivePage('requests')}
-              actionLabel="View requests"
-            />
+            <Documents canCreateBrief={canCreateBrief} />
           )}
 
           {activePage === 'calendar' && canReadCalendar && (
-            <IntegrationPlaceholder
-              icon="▦"
-              title="Calendar integration is not connected yet"
-              description="Meeting requests can be submitted and reviewed. Google Calendar events will appear here once the calendar integration is implemented."
-              action={() => setActivePage('requests')}
-              actionLabel="View meeting requests"
+            <Calendar
+              canCreateMeeting={canCreateRequest}
+              canSyncMeetings={canSyncMeetings}
+              onRequestMeeting={openNewMeetingRequest}
             />
           )}
 
@@ -385,31 +485,101 @@ function Dashboard({ user, onUserUpdate, onSignOut }) {
         <div className="modal-backdrop" role="presentation" onMouseDown={(event) => {
           if (event.target === event.currentTarget && !isSubmitting) setIsCreateOpen(false)
         }}>
-          <section className="request-modal" role="dialog" aria-modal="true" aria-labelledby="request-modal-title">
+          <section className="request-modal meeting-request-modal" role="dialog" aria-modal="true" aria-labelledby="request-modal-title">
             <div className="modal-heading">
-              <div><p className="page-eyebrow">SUBMIT TO YOUR DEPARTMENT</p><h2 id="request-modal-title">New request</h2></div>
+              <div><p className="page-eyebrow">SUBMIT TO YOUR DEPARTMENT</p><h2 id="request-modal-title">Request a meeting</h2></div>
               <button type="button" className="modal-close" onClick={() => setIsCreateOpen(false)} aria-label="Close dialog">×</button>
             </div>
             <form onSubmit={handleCreateRequest}>
-              <label htmlFor="request-type">Request type</label>
-              <select id="request-type" value={form.type} onChange={(event) => setForm({ ...form, type: event.target.value })}>
-                <option value="MEETING">Meeting</option>
-                <option value="DOCUMENT">Document</option>
-              </select>
-
               <label htmlFor="request-title">Title</label>
-              <input id="request-title" maxLength="255" required value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} placeholder="What do you need help with?" />
+              <input id="request-title" maxLength="255" required value={form.title} onChange={(event) => updateMeetingDetails('title', event.target.value)} placeholder="What do you need help with?" />
 
               <label htmlFor="request-topic">Topic <span>(optional)</span></label>
-              <input id="request-topic" value={form.topic} onChange={(event) => setForm({ ...form, topic: event.target.value })} placeholder="Add a short topic" />
+              <input id="request-topic" value={form.topic} onChange={(event) => updateMeetingDetails('topic', event.target.value)} placeholder="Add a short topic" />
 
               <label htmlFor="request-description">Details <span>(optional)</span></label>
-              <textarea id="request-description" rows="4" value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} placeholder="Share any useful context" />
+              <textarea id="request-description" rows="4" value={form.description} onChange={(event) => updateMeetingDetails('description', event.target.value)} placeholder="Share any useful context" />
+
+              <div className="meeting-slot-fields">
+                <label htmlFor="meeting-date">Preferred date</label>
+                <input
+                  id="meeting-date"
+                  type="date"
+                  min={getTodayDate()}
+                  required
+                  value={form.meetingDate}
+                  onChange={(event) => {
+                    setIsAvailabilityLoading(true)
+                    setScheduleRecommendations([])
+                    setForm((previous) => ({ ...previous, meetingDate: event.target.value, meetingStart: '' }))
+                  }}
+                />
+                <label htmlFor="meeting-start">Available time <span>(60 minutes)</span></label>
+                <select
+                  id="meeting-start"
+                  required
+                  value={form.meetingStart}
+                  disabled={isAvailabilityLoading || availableSlots.length === 0}
+                  onChange={(event) => setForm((previous) => ({ ...previous, meetingStart: event.target.value }))}
+                >
+                  <option value="">{isAvailabilityLoading ? 'Checking availability...' : 'Choose an open time'}</option>
+                  {availableSlots.map((slot) => (
+                    <option key={slot} value={slot}>
+                      {slot}{scheduleRecommendations.some((recommendation) => recommendation.time === slot) ? ' · Gemini suggestion' : ''}
+                    </option>
+                  ))}
+                </select>
+                {availabilityWarning && <p className="meeting-availability-warning">{availabilityWarning}</p>}
+                {!isAvailabilityLoading && availableSlots.length === 0 && (
+                  <p className="meeting-availability-warning">No open times for this date. Choose another weekday.</p>
+                )}
+                <button
+                  className="secondary-action schedule-suggest-button"
+                  type="button"
+                  onClick={handleGenerateSchedule}
+                  disabled={!form.title.trim() || isAvailabilityLoading || availableSlots.length === 0 || isScheduleGenerating || isSubmitting}
+                >
+                  {isScheduleGenerating ? 'Finding a good fit...' : 'Ask Gemini to suggest times'}
+                </button>
+                {scheduleRecommendations.length > 0 && (
+                  <div className="schedule-recommendation-list" aria-label="Gemini schedule suggestions">
+                    <strong>Gemini suggestions — choose one to use it</strong>
+                    {scheduleRecommendations.map((recommendation) => (
+                      <button
+                        className={form.meetingStart === recommendation.time ? 'selected' : ''}
+                        type="button"
+                        key={recommendation.time}
+                        onClick={() => setForm((previous) => ({ ...previous, meetingStart: recommendation.time }))}
+                      >
+                        <span>{recommendation.time}</span><small>{recommendation.reason || 'Recommended from the available university schedule.'}</small>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="agenda-generator">
+                <div>
+                  <strong>Meeting agenda</strong>
+                  <span>{form.agenda ? 'Gemini agenda ready and will be included with your request.' : 'Generate an agenda with Gemini before you submit.'}</span>
+                </div>
+                <button className="secondary-action" type="button" onClick={handleGenerateAgenda} disabled={!form.title.trim() || isAgendaGenerating || isSubmitting}>
+                  {isAgendaGenerating ? 'Generating...' : form.agenda ? 'Regenerate agenda' : 'Generate with Gemini'}
+                </button>
+              </div>
+              {form.agenda && (
+                <div className="generated-agenda-preview">
+                  <strong>{form.agenda.title}</strong>
+                  {form.agenda.items.map((item, index) => (
+                    <div key={`${item.title}-${index}`}><span>{item.title}</span><small>{item.durationMinutes} min</small></div>
+                  ))}
+                </div>
+              )}
 
               {error && <div className="form-error" role="alert">{error}</div>}
               <div className="modal-actions">
                 <button className="secondary-action" type="button" onClick={() => setIsCreateOpen(false)} disabled={isSubmitting}>Cancel</button>
-                <button className="primary-action" type="submit" disabled={isSubmitting}>{isSubmitting ? 'Submitting...' : 'Submit request'}</button>
+                <button className="primary-action" type="submit" disabled={isSubmitting || !form.meetingStart}>{isSubmitting ? 'Submitting...' : 'Submit meeting request'}</button>
               </div>
             </form>
           </section>
@@ -450,6 +620,15 @@ function RequestList({ requests, isLoading, isTeacher, canReview, onReview, work
               {request.department ? ` · ${request.department}` : ''}
             </span>
             {request.description && <small>{request.description}</small>}
+            {request.meetingDate && (
+              <small>Requested time: {formatDate(request.meetingDate)} · {request.meetingStart?.slice(0, 5)}</small>
+            )}
+            {request.agenda?.items?.length > 0 && (
+              <details className="request-agenda-details">
+                <summary>AI agenda · {request.agenda.items.length} topics</summary>
+                <ol>{request.agenda.items.map((item, index) => <li key={`${item.title}-${index}`}>{item.title} <span>({item.durationMinutes} min)</span></li>)}</ol>
+              </details>
+            )}
           </div>
           <div className="request-meta">
             <span className={`status-badge status-${request.status.toLowerCase()}`}>{request.status}</span>

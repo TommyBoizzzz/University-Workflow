@@ -14,20 +14,20 @@ const defaultPermissions = {
     requests: { read: true, create: false, update: true, delete: false },
     approvals: { read: true, create: true, update: true, delete: false },
     documents: { read: true, create: false, update: false, delete: false },
-    calendar: { read: true, create: false, update: false, delete: false }
+    calendar: { read: true, create: true, update: false, delete: false }
   },
   MANAGER: {
     users: { read: false, create: false, update: false, delete: false },
     requests: { read: true, create: false, update: true, delete: false },
     approvals: { read: true, create: true, update: true, delete: false },
     documents: { read: true, create: false, update: false, delete: false },
-    calendar: { read: true, create: false, update: false, delete: false }
+    calendar: { read: true, create: true, update: false, delete: false }
   },
   TEACHER: {
     users: { read: false, create: false, update: false, delete: false },
     requests: { read: true, create: true, update: false, delete: false },
     approvals: { read: false, create: false, update: false, delete: false },
-    documents: { read: true, create: false, update: false, delete: false },
+    documents: { read: true, create: true, update: false, delete: false },
     calendar: { read: true, create: false, update: false, delete: false }
   }
 };
@@ -109,10 +109,19 @@ const initDatabase = async () => {
       meeting_date DATE NOT NULL,
       start_time TIME NOT NULL,
       end_time TIME NOT NULL,
+      duration_minutes INTEGER NOT NULL DEFAULT 60,
       location VARCHAR(255),
       google_event_id VARCHAR(255),
+      google_sync_status VARCHAR(20) NOT NULL DEFAULT 'NOT_CONFIGURED',
+      google_sync_error TEXT,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
+  `);
+  await pool.query(`
+    ALTER TABLE meetings
+    ADD COLUMN IF NOT EXISTS duration_minutes INTEGER NOT NULL DEFAULT 60,
+    ADD COLUMN IF NOT EXISTS google_sync_status VARCHAR(20) NOT NULL DEFAULT 'NOT_CONFIGURED',
+    ADD COLUMN IF NOT EXISTS google_sync_error TEXT
   `);
 
   // 6. Agendas
@@ -131,11 +140,20 @@ const initDatabase = async () => {
     CREATE TABLE IF NOT EXISTS documents (
       id SERIAL PRIMARY KEY,
       request_id INTEGER REFERENCES requests(id),
+      created_by INTEGER REFERENCES users(id),
       document_title VARCHAR(255) NOT NULL,
       google_doc_id VARCHAR(255),
       drive_url TEXT,
+      source_filename VARCHAR(255),
+      generated_brief JSONB,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
+  `);
+  await pool.query(`
+    ALTER TABLE documents
+    ADD COLUMN IF NOT EXISTS created_by INTEGER REFERENCES users(id),
+    ADD COLUMN IF NOT EXISTS source_filename VARCHAR(255),
+    ADD COLUMN IF NOT EXISTS generated_brief JSONB
   `);
 
   // 8. Approvals

@@ -1,5 +1,6 @@
 import express from "express";
 import {
+  createAgenda,
   createRequest,
   listRequests,
   reviewRequest
@@ -13,6 +14,7 @@ const router = express.Router();
 
 router.use(authenticate);
 router.get("/", authorizePermission("requests", "read"), listRequests);
+router.post("/agenda", authorizePermission("requests", "create"), createAgenda);
 router.post("/", authorizePermission("requests", "create"), createRequest);
 router.patch(
   "/:id/status",

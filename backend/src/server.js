@@ -6,6 +6,8 @@ import dotenv from "dotenv";
 import pool, { createDatabase } from "./config/database.js";
 import initDatabase from "./database/initDatabase.js";
 import authRoutes from "./routes/authRoutes.js";
+import calendarRoutes from "./routes/calendarRoutes.js";
+import documentRoutes from "./routes/documentRoutes.js";
 import requestRoutes from "./routes/requestRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 
@@ -17,6 +19,8 @@ app.use(cors());
 app.use(express.json());
 
 app.use("/api/auth", authRoutes);
+app.use("/api/calendar", calendarRoutes);
+app.use("/api/documents", documentRoutes);
 app.use("/api/requests", requestRoutes);
 app.use("/api/users", userRoutes);
 

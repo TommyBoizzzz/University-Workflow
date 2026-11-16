@@ -1,4 +1,15 @@
 import pool from "../config/database.js";
+import { generateAgenda } from "../integrations/gemini.js";
+import {
+  getBusyRanges,
+  syncApprovedMeeting
+} from "../services/calendarService.js";
+import {
+  isFutureMeetingStart,
+  isValidTime,
+  timeToMinutes
+} from "../utils/scheduling.js";
+import { isGoogleCalendarConfigured } from "../integrations/googleCalendar.js";
 
 const requestSelection = `
   SELECT
@@ -11,10 +22,22 @@ const requestSelection = `
     requests.created_at AS "createdAt",
     requests.teacher_id AS "teacherId",
     users.full_name AS "submittedBy",
-    departments.department_name AS department
+    departments.department_name AS department,
+    meetings.meeting_date AS "meetingDate",
+    meetings.start_time AS "meetingStart",
+    meetings.end_time AS "meetingEnd",
+    agendas.generated_content AS agenda
   FROM requests
   JOIN users ON users.id = requests.teacher_id
   LEFT JOIN departments ON departments.id = users.department_id
+  LEFT JOIN meetings ON meetings.request_id = requests.id
+  LEFT JOIN LATERAL (
+    SELECT generated_content
+    FROM agendas
+    WHERE agendas.request_id = requests.id
+    ORDER BY created_at DESC, id DESC
+    LIMIT 1
+  ) agendas ON TRUE
 `;
 
 export const listRequests = async (req, res) => {
@@ -38,38 +61,78 @@ export const listRequests = async (req, res) => {
 };
 
 export const createRequest = async (req, res) => {
+  const { type, title, topic = null, description = null, meetingDate, meetingStart, agenda } = req.body ?? {};
+  if (!["MEETING", "DOCUMENT"].includes(type)) {
+    return res.status(400).json({
+      success: false,
+      message: "Request type must be MEETING or DOCUMENT"
+    });
+  }
+  if (typeof title !== "string" || !title.trim() || title.trim().length > 255) {
+    return res.status(400).json({
+      success: false,
+      message: "A title of 1 to 255 characters is required"
+    });
+  }
+  if (topic !== null && (typeof topic !== "string" || topic.length > 2000)) {
+    return res.status(400).json({
+      success: false,
+      message: "Topic must be text of 2,000 characters or fewer"
+    });
+  }
+  if (description !== null && (typeof description !== "string" || description.length > 10000)) {
+    return res.status(400).json({
+      success: false,
+      message: "Details must be text of 10,000 characters or fewer"
+    });
+  }
+  if (type === "MEETING" && (
+    !isFutureMeetingStart(meetingDate, meetingStart) ||
+    !isValidTime(meetingStart) ||
+    timeToMinutes(meetingStart) < 9 * 60 ||
+    timeToMinutes(meetingStart) > 16 * 60 ||
+    ![0, 30].includes(timeToMinutes(meetingStart) % 60)
+  )) {
+    return res.status(400).json({
+      success: false,
+      message: "Choose an available weekday slot between 9:00 and 16:00"
+    });
+  }
+
+  if (agenda !== undefined && (
+    !agenda ||
+    typeof agenda !== "object" ||
+    !Array.isArray(agenda.items) ||
+    agenda.items.length > 8
+  )) {
+    return res.status(400).json({
+      success: false,
+      message: "The generated agenda is invalid"
+    });
+  }
+
+  let client;
+  let transactionStarted = false;
   try {
-    const { type, title, topic = null, description = null } = req.body ?? {};
+    client = await pool.connect();
+    await client.query("BEGIN");
+    transactionStarted = true;
 
-    if (!["MEETING", "DOCUMENT"].includes(type)) {
-      return res.status(400).json({
-        success: false,
-        message: "Request type must be MEETING or DOCUMENT"
-      });
+    if (type === "MEETING") {
+      await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [meetingDate]);
+      const { ranges } = await getBusyRanges(meetingDate, { queryable: client });
+      const start = timeToMinutes(meetingStart);
+      if (ranges.some((range) => range.start < start + 60 && range.end > start)) {
+        await client.query("ROLLBACK");
+        transactionStarted = false;
+        return res.status(409).json({
+          success: false,
+          message: "That time is no longer available. Choose another slot."
+        });
+      }
     }
 
-    if (typeof title !== "string" || !title.trim() || title.trim().length > 255) {
-      return res.status(400).json({
-        success: false,
-        message: "A title of 1 to 255 characters is required"
-      });
-    }
-
-    if (topic !== null && typeof topic !== "string") {
-      return res.status(400).json({
-        success: false,
-        message: "Topic must be text"
-      });
-    }
-
-    if (description !== null && typeof description !== "string") {
-      return res.status(400).json({
-        success: false,
-        message: "Description must be text"
-      });
-    }
-
-    const result = await pool.query(
+    const result = await client.query(
       `INSERT INTO requests (teacher_id, request_type, title, topic, description)
        VALUES ($1, $2, $3, $4, $5)
        RETURNING id, request_type AS type, title, topic, description, status,
@@ -82,17 +145,87 @@ export const createRequest = async (req, res) => {
         description?.trim() || null
       ]
     );
+    const request = result.rows[0];
+    if (type === "MEETING") {
+      const startMinutes = timeToMinutes(meetingStart);
+      const endMinutes = startMinutes + 60;
+      const endTime = `${String(Math.floor(endMinutes / 60)).padStart(2, "0")}:${String(endMinutes % 60).padStart(2, "0")}`;
+      const meetingResult = await client.query(
+        `INSERT INTO meetings (request_id, meeting_date, start_time, end_time, duration_minutes)
+         VALUES ($1, $2, $3, $4, 60)
+         RETURNING id`,
+        [request.id, meetingDate, meetingStart, endTime]
+      );
+      request.meetingDate = meetingDate;
+      request.meetingStart = meetingStart;
+      request.meetingEnd = endTime;
+      request.meetingId = meetingResult.rows[0].id;
+      if (agenda !== undefined) {
+        await client.query(
+          "INSERT INTO agendas (request_id, generated_content) VALUES ($1, $2)",
+          [request.id, JSON.stringify(agenda)]
+        );
+        request.agenda = agenda;
+      }
+    }
+    await client.query("COMMIT");
+    transactionStarted = false;
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       message: "Request submitted",
-      request: result.rows[0]
+      request
     });
   } catch (error) {
+    if (transactionStarted) {
+      try {
+        await client.query("ROLLBACK");
+      } catch (rollbackError) {
+        console.error("Create request rollback error:", rollbackError);
+      }
+    }
     console.error("Create request error:", error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Unable to submit request"
+    });
+  } finally {
+    if (client) client.release();
+  }
+};
+
+export const createAgenda = async (req, res) => {
+  const { title, topic = "", description = "" } = req.body ?? {};
+  if (typeof title !== "string" || !title.trim() || title.trim().length > 255) {
+    return res.status(400).json({
+      success: false,
+      message: "A meeting title is required to generate an agenda"
+    });
+  }
+  if (
+    typeof topic !== "string" || topic.length > 2000 ||
+    typeof description !== "string" || description.length > 10000
+  ) {
+    return res.status(400).json({
+      success: false,
+      message: "Meeting details are invalid"
+    });
+  }
+
+  try {
+    const agenda = await generateAgenda({
+      title: title.trim(),
+      topic: topic.trim(),
+      description: description.trim()
+    });
+    return res.json({ success: true, agenda });
+  } catch (error) {
+    console.error("Generate agenda error:", error);
+    return res.status(error.statusCode || 502).json({
+      success: false,
+      message: error.statusCode === 503
+        ? error.message
+        : "Unable to generate an agenda. Check the Gemini configuration and try again."
     });
   }
 };
@@ -131,7 +264,14 @@ export const reviewRequest = async (req, res) => {
     transactionStarted = true;
 
     const requestResult = await client.query(
-      "SELECT id, status FROM requests WHERE id = $1 FOR UPDATE",
+      `SELECT requests.id, requests.status, requests.request_type AS type,
+              requests.title, requests.description, meetings.id AS "meetingId",
+              meetings.meeting_date AS "meetingDate", meetings.start_time AS "meetingStart",
+              meetings.end_time AS "meetingEnd"
+       FROM requests
+       LEFT JOIN meetings ON meetings.request_id = requests.id
+       WHERE requests.id = $1
+       FOR UPDATE OF requests`,
       [requestId]
     );
 
@@ -153,6 +293,58 @@ export const reviewRequest = async (req, res) => {
       });
     }
 
+    const request = requestResult.rows[0];
+    let meeting = null;
+    if (status === "APPROVED" && request.type === "MEETING") {
+      const permissionResult = await client.query(
+        `SELECT role_permissions.enabled
+         FROM users
+         JOIN role_permissions ON role_permissions.role_id = users.role_id
+         WHERE users.id = $1 AND role_permissions.resource = 'calendar'
+           AND role_permissions.action = 'create'`,
+        [req.user.id]
+      );
+      if (!permissionResult.rows[0]?.enabled) {
+        await client.query("ROLLBACK");
+        transactionStarted = false;
+        return res.status(403).json({
+          success: false,
+          message: "Calendar: Create permission is required to approve a meeting"
+        });
+      }
+      if (!request.meetingId) {
+        await client.query("ROLLBACK");
+        transactionStarted = false;
+        return res.status(409).json({
+          success: false,
+          message: "This meeting request has no reserved time. Ask the teacher to submit it again."
+        });
+      }
+
+      const meetingDate = request.meetingDate instanceof Date
+        ? request.meetingDate.toISOString().slice(0, 10)
+        : String(request.meetingDate).slice(0, 10);
+      await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [meetingDate]);
+      const { ranges } = await getBusyRanges(meetingDate, {
+        queryable: client,
+        excludeRequestId: requestId
+      });
+      const meetingStart = timeToMinutes(request.meetingStart);
+      const meetingEnd = timeToMinutes(request.meetingEnd);
+      if (ranges.some((range) => range.start < meetingEnd && range.end > meetingStart)) {
+        await client.query("ROLLBACK");
+        transactionStarted = false;
+        return res.status(409).json({
+          success: false,
+          message: "The requested time now conflicts with another university or Google Calendar event. Reject the request and ask the teacher to choose another time."
+        });
+      }
+      meeting = {
+        id: request.meetingId,
+        date: meetingDate
+      };
+    }
+
     await client.query(
       "UPDATE requests SET status = $1 WHERE id = $2",
       [status, requestId]
@@ -165,11 +357,44 @@ export const reviewRequest = async (req, res) => {
     await client.query("COMMIT");
     transactionStarted = false;
 
-    res.json({
+    let googleCalendarSynced = null;
+    let warning = null;
+    if (meeting && status === "APPROVED") {
+      if (!isGoogleCalendarConfigured()) {
+        googleCalendarSynced = false;
+        warning = "Meeting confirmed in the university schedule, but Google Calendar is not configured.";
+      } else {
+        try {
+          const syncResult = await syncApprovedMeeting(meeting.id);
+          googleCalendarSynced = syncResult.synced === true;
+          if (!googleCalendarSynced) {
+            warning = "Meeting confirmed in the university schedule, but Google Calendar is not configured.";
+          }
+        } catch (syncError) {
+          console.error("Google Calendar meeting sync error:", syncError);
+          googleCalendarSynced = false;
+          warning = "Meeting confirmed in the university schedule, but Google Calendar sync failed. A manager can retry from the calendar.";
+          try {
+            await pool.query(
+              `UPDATE meetings
+               SET google_sync_status = $1, google_sync_error = $2
+               WHERE id = $3`,
+              [syncError.statusCode === 409 ? "CONFLICT" : "FAILED", "Google Calendar sync failed", meeting.id]
+            );
+          } catch (syncStateError) {
+            console.error("Google Calendar sync state error:", syncStateError);
+          }
+        }
+      }
+    }
+
+    return res.json({
       success: true,
       message: `Request ${status.toLowerCase()}`,
       requestId,
-      status
+      status,
+      googleCalendarSynced,
+      warning
     });
   } catch (error) {
     if (transactionStarted) {
