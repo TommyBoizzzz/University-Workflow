@@ -18,7 +18,7 @@ const defaultPermissions = {
   },
   MANAGER: {
     users: { read: false, create: false, update: false, delete: false },
-    requests: { read: true, create: false, update: false, delete: false },
+    requests: { read: true, create: false, update: true, delete: false },
     approvals: { read: true, create: true, update: true, delete: false },
     documents: { read: true, create: false, update: false, delete: false },
     calendar: { read: true, create: false, update: false, delete: false }
