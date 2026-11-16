@@ -11,7 +11,6 @@ import {
   updateManagedRole,
   updateManagedUser,
 } from '../services/userService.js'
-import './UserManagement.css'
 
 const emptyForm = {
   fullName: '',

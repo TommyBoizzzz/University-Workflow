@@ -6,7 +6,6 @@ import {
 } from '../services/requestService.js'
 import { getCurrentUser } from '../services/authService.js'
 import UserManagement from './UserManagement.jsx'
-import './Dashboard.css'
 
 const navigation = [
   { id: 'overview', label: 'Overview', icon: '◫' },

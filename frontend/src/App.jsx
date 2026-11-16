@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import Login from './pages/Login.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import { getCurrentUser, getStoredToken, signOut } from './services/authService.js'
-import './App.css'
 
 function App() {
   const [user, setUser] = useState(null)
