@@ -2,6 +2,36 @@
 import pool from "../config/database.js";
 import bcrypt from "bcryptjs";
 
+const permissionResources = ["users", "requests", "approvals", "documents", "calendar"];
+const permissionActions = ["read", "create", "update", "delete"];
+const defaultPermissions = {
+  SUPERADMIN: Object.fromEntries(permissionResources.map((resource) => [
+    resource,
+    Object.fromEntries(permissionActions.map((action) => [action, true]))
+  ])),
+  ADMIN: {
+    users: { read: true, create: true, update: true, delete: true },
+    requests: { read: true, create: false, update: true, delete: false },
+    approvals: { read: true, create: true, update: true, delete: false },
+    documents: { read: true, create: false, update: false, delete: false },
+    calendar: { read: true, create: false, update: false, delete: false }
+  },
+  MANAGER: {
+    users: { read: false, create: false, update: false, delete: false },
+    requests: { read: true, create: false, update: false, delete: false },
+    approvals: { read: true, create: true, update: true, delete: false },
+    documents: { read: true, create: false, update: false, delete: false },
+    calendar: { read: true, create: false, update: false, delete: false }
+  },
+  TEACHER: {
+    users: { read: false, create: false, update: false, delete: false },
+    requests: { read: true, create: true, update: false, delete: false },
+    approvals: { read: false, create: false, update: false, delete: false },
+    documents: { read: true, create: false, update: false, delete: false },
+    calendar: { read: true, create: false, update: false, delete: false }
+  }
+};
+
 const initDatabase = async () => {
   console.log("Initializing university database...");
 
@@ -20,7 +50,24 @@ const initDatabase = async () => {
       id SERIAL PRIMARY KEY,
       role_name VARCHAR(50) UNIQUE NOT NULL,
       description TEXT,
+      is_system BOOLEAN NOT NULL DEFAULT FALSE,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+  await pool.query(`
+    ALTER TABLE roles
+    ADD COLUMN IF NOT EXISTS is_system BOOLEAN NOT NULL DEFAULT FALSE
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS role_permissions (
+      role_id INTEGER NOT NULL REFERENCES roles(id),
+      resource VARCHAR(30) NOT NULL
+        CHECK (resource IN ('users', 'requests', 'approvals', 'documents', 'calendar')),
+      action VARCHAR(10) NOT NULL
+        CHECK (action IN ('read', 'create', 'update', 'delete')),
+      enabled BOOLEAN NOT NULL DEFAULT FALSE,
+      PRIMARY KEY (role_id, resource, action)
     )
   `);
 
@@ -126,15 +173,34 @@ const initDatabase = async () => {
 
   for (const [name, description] of roles) {
     await pool.query(
-      `INSERT INTO roles (role_name, description)
-       VALUES ($1, $2)
+      `INSERT INTO roles (role_name, description, is_system)
+       VALUES ($1, $2, TRUE)
        ON CONFLICT (role_name)
-       DO UPDATE SET description = EXCLUDED.description`,
+       DO UPDATE SET description = EXCLUDED.description, is_system = TRUE`,
       [name, description]
     );
   }
 
   console.log("Default roles created!");
+
+  for (const [roleName, resources] of Object.entries(defaultPermissions)) {
+    const roleResult = await pool.query(
+      "SELECT id FROM roles WHERE role_name = $1",
+      [roleName]
+    );
+    const roleId = roleResult.rows[0].id;
+
+    for (const resource of permissionResources) {
+      for (const action of permissionActions) {
+        await pool.query(
+          `INSERT INTO role_permissions (role_id, resource, action, enabled)
+           VALUES ($1, $2, $3, $4)
+           ON CONFLICT (role_id, resource, action) DO NOTHING`,
+          [roleId, resource, action, resources[resource]?.[action] === true]
+        );
+      }
+    }
+  }
 
   // 11. Seed departments
   const departments = [

@@ -37,3 +37,51 @@ export async function createManagedUser(userData) {
     body: JSON.stringify(userData),
   })
 }
+
+export async function updateManagedUser(userId, userData) {
+  return request(`/api/users/${userId}`, {
+    method: 'PUT',
+    body: JSON.stringify(userData),
+  })
+}
+
+export async function deleteManagedUser(userId) {
+  return request(`/api/users/${userId}`, {
+    method: 'DELETE',
+  })
+}
+
+export async function getRolePermissionData() {
+  return request('/api/users/role-permissions')
+}
+
+export async function saveRolePermissions(roleName, permissions) {
+  return request(`/api/users/role-permissions/${encodeURIComponent(roleName)}`, {
+    method: 'PUT',
+    body: JSON.stringify({ permissions }),
+  })
+}
+
+export async function getManagedRoles() {
+  return request('/api/users/roles')
+}
+
+export async function createManagedRole(roleData) {
+  return request('/api/users/roles', {
+    method: 'POST',
+    body: JSON.stringify(roleData),
+  })
+}
+
+export async function updateManagedRole(roleId, roleData) {
+  return request(`/api/users/roles/${roleId}`, {
+    method: 'PUT',
+    body: JSON.stringify(roleData),
+  })
+}
+
+export async function deleteManagedRole(roleId) {
+  return request(`/api/users/roles/${roleId}`, {
+    method: 'DELETE',
+  })
+}

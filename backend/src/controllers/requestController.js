@@ -122,10 +122,11 @@ export const reviewRequest = async (req, res) => {
     });
   }
 
-  const client = await pool.connect();
+  let client;
   let transactionStarted = false;
 
   try {
+    client = await pool.connect();
     await client.query("BEGIN");
     transactionStarted = true;
 
@@ -185,6 +186,6 @@ export const reviewRequest = async (req, res) => {
       message: "Unable to review request"
     });
   } finally {
-    client.release();
+    if (client) client.release();
   }
 };

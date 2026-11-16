@@ -4,30 +4,20 @@ import {
   getRequests,
   reviewRequest,
 } from '../services/requestService.js'
-import {
-  createManagedUser,
-  getUserManagementData,
-} from '../services/userService.js'
+import { getCurrentUser } from '../services/authService.js'
+import UserManagement from './UserManagement.jsx'
 import './Dashboard.css'
 
 const navigation = [
   { id: 'overview', label: 'Overview', icon: '◫' },
-  { id: 'requests', label: 'Requests', icon: '↗' },
-  { id: 'approvals', label: 'Approvals', icon: '✓', reviewersOnly: true },
-  { id: 'documents', label: 'Documents', icon: '▤' },
-  { id: 'calendar', label: 'Calendar', icon: '▦' },
-  { id: 'users', label: 'Users', icon: '♙', adminsOnly: true },
+  { id: 'requests', label: 'Requests', icon: '↗', permission: ['requests', 'read'] },
+  { id: 'approvals', label: 'Approvals', icon: '✓', permission: ['approvals', 'read'] },
+  { id: 'documents', label: 'Documents', icon: '▤', permission: ['documents', 'read'] },
+  { id: 'calendar', label: 'Calendar', icon: '▦', permission: ['calendar', 'read'] },
+  { id: 'users', label: 'Users', icon: '♙', permission: ['users', 'read'] },
 ]
 
 const initialForm = { type: 'MEETING', title: '', topic: '', description: '' }
-const initialUserForm = {
-  fullName: '',
-  email: '',
-  password: '',
-  role: '',
-  departmentId: '',
-}
-
 function formatDate(value) {
   return new Intl.DateTimeFormat(undefined, {
     month: 'short',
@@ -36,24 +26,52 @@ function formatDate(value) {
   }).format(new Date(value))
 }
 
-function Dashboard({ user, onSignOut }) {
+function Dashboard({ user, onUserUpdate, onSignOut }) {
   const [activePage, setActivePage] = useState('overview')
   const [requests, setRequests] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
+  const [successMessage, setSuccessMessage] = useState('')
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [form, setForm] = useState(initialForm)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [workingRequestId, setWorkingRequestId] = useState(null)
-  const [userDirectory, setUserDirectory] = useState({ users: [], roles: [], departments: [] })
-  const [isUsersLoading, setIsUsersLoading] = useState(false)
-  const [isCreateUserOpen, setIsCreateUserOpen] = useState(false)
-  const [userForm, setUserForm] = useState(initialUserForm)
-  const [isCreatingUser, setIsCreatingUser] = useState(false)
-  const [createUserError, setCreateUserError] = useState('')
   const isTeacher = user.role === 'TEACHER'
-  const canReview = ['MANAGER', 'ADMIN', 'SUPERADMIN'].includes(user.role)
-  const canManageUsers = ['ADMIN', 'SUPERADMIN'].includes(user.role)
+  const hasPermission = (resource, action, fallback = false) => (
+    user.permissions?.[resource]?.[action] ?? fallback
+  )
+  const canReview = hasPermission('requests', 'update', ['MANAGER', 'ADMIN', 'SUPERADMIN'].includes(user.role))
+    && hasPermission('approvals', 'update', ['MANAGER', 'ADMIN', 'SUPERADMIN'].includes(user.role))
+    && hasPermission('approvals', 'create', ['MANAGER', 'ADMIN', 'SUPERADMIN'].includes(user.role))
+  const canCreateRequest = hasPermission('requests', 'create', isTeacher)
+  const canReadRequests = hasPermission('requests', 'read', true)
+  const canReadApprovals = hasPermission('approvals', 'read', canReview) && canReadRequests
+  const canReadDocuments = hasPermission('documents', 'read', true)
+  const canReadCalendar = hasPermission('calendar', 'read', true)
+  const canManageUsers = hasPermission('users', 'read', ['ADMIN', 'SUPERADMIN'].includes(user.role))
+
+  useEffect(() => {
+    let isActive = true
+    let lastRefreshAt = 0
+    const refreshUserPermissions = async () => {
+      if (document.visibilityState === 'hidden' || Date.now() - lastRefreshAt < 1500) return
+      lastRefreshAt = Date.now()
+      try {
+        const currentUser = await getCurrentUser()
+        if (isActive) onUserUpdate(currentUser)
+      } catch (refreshError) {
+        if (isActive) setError(refreshError.message || 'Unable to refresh your access permissions.')
+      }
+    }
+
+    window.addEventListener('focus', refreshUserPermissions)
+    document.addEventListener('visibilitychange', refreshUserPermissions)
+    return () => {
+      isActive = false
+      window.removeEventListener('focus', refreshUserPermissions)
+      document.removeEventListener('visibilitychange', refreshUserPermissions)
+    }
+  }, [onUserUpdate])
 
   const loadRequests = useCallback(async () => {
     setError('')
@@ -70,21 +88,23 @@ function Dashboard({ user, onSignOut }) {
   useEffect(() => {
     let isActive = true
 
-    getRequests()
-      .then((loadedRequests) => {
-        if (isActive) setRequests(loadedRequests)
-      })
-      .catch((loadError) => {
-        if (isActive) setError(loadError.message || 'Unable to load requests.')
-      })
-      .finally(() => {
-        if (isActive) setIsLoading(false)
-      })
+    if (canReadRequests) {
+      getRequests()
+        .then((loadedRequests) => {
+          if (isActive) setRequests(loadedRequests)
+        })
+        .catch((loadError) => {
+          if (isActive) setError(loadError.message || 'Unable to load requests.')
+        })
+        .finally(() => {
+          if (isActive) setIsLoading(false)
+        })
+    }
 
     return () => {
       isActive = false
     }
-  }, [])
+  }, [canReadRequests])
 
   const pendingCount = useMemo(
     () => requests.filter((request) => request.status === 'PENDING').length,
@@ -96,19 +116,30 @@ function Dashboard({ user, onSignOut }) {
   )
   const recentRequests = requests.slice(0, 5)
   const visibleNavigation = navigation.filter(
-    (item) => (!item.reviewersOnly || canReview) && (!item.adminsOnly || canManageUsers),
+    (item) => (item.id !== 'approvals' || canReadRequests)
+      && (!item.permission || hasPermission(
+        item.permission[0],
+        item.permission[1],
+        item.id === 'users' ? ['ADMIN', 'SUPERADMIN'].includes(user.role) : true,
+      )),
   )
 
   const handleCreateRequest = async (event) => {
     event.preventDefault()
     setError('')
+    setSuccessMessage('')
     setIsSubmitting(true)
     try {
       await createRequest(form)
       setForm(initialForm)
       setIsCreateOpen(false)
-      setActivePage('requests')
-      await loadRequests()
+      setSuccessMessage('Your request was submitted successfully.')
+      if (canReadRequests) {
+        setActivePage('requests')
+        await loadRequests()
+      } else {
+        setActivePage('overview')
+      }
     } catch (submitError) {
       setError(submitError.message || 'Unable to submit your request.')
     } finally {
@@ -118,9 +149,11 @@ function Dashboard({ user, onSignOut }) {
 
   const handleReview = async (requestId, status) => {
     setError('')
+    setSuccessMessage('')
     setWorkingRequestId(requestId)
     try {
       await reviewRequest(requestId, status)
+      setSuccessMessage(`Request ${status.toLowerCase()} successfully.`)
       await loadRequests()
     } catch (reviewError) {
       setError(reviewError.message || 'Unable to update this request.')
@@ -129,40 +162,8 @@ function Dashboard({ user, onSignOut }) {
     }
   }
 
-  const loadUserDirectory = useCallback(async () => {
-    setError('')
-    setIsUsersLoading(true)
-    try {
-      setUserDirectory(await getUserManagementData())
-    } catch (loadError) {
-      setError(loadError.message || 'Unable to load users.')
-    } finally {
-      setIsUsersLoading(false)
-    }
-  }, [])
-
   const handleNavigate = (page) => {
     setActivePage(page)
-    if (page === 'users') loadUserDirectory()
-  }
-
-  const handleCreateUser = async (event) => {
-    event.preventDefault()
-    setCreateUserError('')
-    setIsCreatingUser(true)
-    try {
-      await createManagedUser({
-        ...userForm,
-        departmentId: userForm.departmentId || null,
-      })
-      setUserForm(initialUserForm)
-      setIsCreateUserOpen(false)
-      await loadUserDirectory()
-    } catch (createError) {
-      setCreateUserError(createError.message || 'Unable to create user.')
-    } finally {
-      setIsCreatingUser(false)
-    }
   }
 
   const pageTitle = {
@@ -236,7 +237,7 @@ function Dashboard({ user, onSignOut }) {
                   : 'Track and manage university workflow activity.'}
               </p>
             </div>
-            {isTeacher && (
+            {canCreateRequest && (
               <button className="primary-action" type="button" onClick={() => setIsCreateOpen(true)}>
                 <span aria-hidden="true">+</span> New request
               </button>
@@ -250,6 +251,12 @@ function Dashboard({ user, onSignOut }) {
               <button type="button" onClick={() => setError('')} aria-label="Dismiss error">×</button>
             </div>
           )}
+          {successMessage && (
+            <div className="workspace-success" role="status">
+              <span>{successMessage}</span>
+              <button type="button" onClick={() => setSuccessMessage('')} aria-label="Dismiss message">×</button>
+            </div>
+          )}
 
           {activePage === 'overview' && (
             <>
@@ -257,51 +264,55 @@ function Dashboard({ user, onSignOut }) {
                 <article className="stat-card">
                   <span className="stat-icon stat-icon-blue">↗</span>
                   <span className="stat-label">Total requests</span>
-                  <strong>{isLoading ? '—' : requests.length}</strong>
+                  <strong>{!canReadRequests || isLoading ? '—' : requests.length}</strong>
                   <small>Recorded in the system</small>
                 </article>
                 <article className="stat-card">
                   <span className="stat-icon stat-icon-amber">◷</span>
                   <span className="stat-label">{canReview ? 'Awaiting review' : 'Pending requests'}</span>
-                  <strong>{isLoading ? '—' : pendingCount}</strong>
+                  <strong>{!canReadRequests || isLoading ? '—' : pendingCount}</strong>
                   <small>{canReview ? 'Ready for your attention' : 'Waiting for a decision'}</small>
                 </article>
                 <article className="stat-card">
                   <span className="stat-icon stat-icon-green">✓</span>
                   <span className="stat-label">Approved</span>
-                  <strong>{isLoading ? '—' : approvedCount}</strong>
+                  <strong>{!canReadRequests || isLoading ? '—' : approvedCount}</strong>
                   <small>Approved requests</small>
                 </article>
               </section>
 
-              <section className="content-card">
-                <div className="card-heading">
-                  <div><h2>Recent requests</h2><p>Latest activity from your workflow</p></div>
-                  <button className="text-action" type="button" onClick={() => handleNavigate('requests')}>View all <span aria-hidden="true">→</span></button>
-                </div>
-                <RequestList
-                  requests={recentRequests}
-                  isLoading={isLoading}
-                  isTeacher={isTeacher}
-                  canReview={false}
-                  onReview={handleReview}
-                  workingRequestId={workingRequestId}
-                />
-              </section>
+              {canReadRequests ? (
+                <section className="content-card">
+                  <div className="card-heading">
+                    <div><h2>Recent requests</h2><p>Latest activity from your workflow</p></div>
+                    <button className="text-action" type="button" onClick={() => handleNavigate('requests')}>View all <span aria-hidden="true">→</span></button>
+                  </div>
+                  <RequestList
+                    requests={recentRequests}
+                    isLoading={isLoading}
+                    isTeacher={isTeacher}
+                    canReview={false}
+                    onReview={handleReview}
+                    workingRequestId={workingRequestId}
+                  />
+                </section>
+              ) : (
+                <div className="empty-state"><strong>Request activity is hidden</strong><span>Your role does not have permission to read requests.</span></div>
+              )}
             </>
           )}
 
-          {(activePage === 'requests' || activePage === 'approvals') && (
+          {(activePage === 'requests' && canReadRequests) && (
             <section className="content-card request-page-card">
               <div className="card-heading">
                 <div>
-                  <h2>{activePage === 'approvals' ? 'Requests awaiting your review' : 'Request activity'}</h2>
-                  <p>{activePage === 'approvals' ? 'Review, approve, or reject pending submissions.' : `${requests.length} ${requests.length === 1 ? 'request' : 'requests'} in this view`}</p>
+                  <h2>Request activity</h2>
+                  <p>{`${requests.length} ${requests.length === 1 ? 'request' : 'requests'} in this view`}</p>
                 </div>
                 <button className="icon-action" type="button" onClick={loadRequests} aria-label="Refresh requests">↻</button>
               </div>
               <RequestList
-                requests={activePage === 'approvals' ? requests.filter((request) => request.status === 'PENDING') : requests}
+                requests={requests}
                 isLoading={isLoading}
                 isTeacher={isTeacher}
                 canReview={canReview}
@@ -311,7 +322,27 @@ function Dashboard({ user, onSignOut }) {
             </section>
           )}
 
-          {activePage === 'documents' && (
+          {activePage === 'approvals' && canReadApprovals && (
+            <section className="content-card request-page-card">
+              <div className="card-heading">
+                <div>
+                  <h2>Requests awaiting your review</h2>
+                  <p>Review, approve, or reject pending submissions.</p>
+                </div>
+                <button className="icon-action" type="button" onClick={loadRequests} aria-label="Refresh requests">↻</button>
+              </div>
+              <RequestList
+                requests={requests.filter((request) => request.status === 'PENDING')}
+                isLoading={isLoading}
+                isTeacher={isTeacher}
+                canReview={canReview}
+                onReview={handleReview}
+                workingRequestId={workingRequestId}
+              />
+            </section>
+          )}
+
+          {activePage === 'documents' && canReadDocuments && (
             <IntegrationPlaceholder
               icon="▤"
               title="Document workflows are not connected yet"
@@ -321,7 +352,7 @@ function Dashboard({ user, onSignOut }) {
             />
           )}
 
-          {activePage === 'calendar' && (
+          {activePage === 'calendar' && canReadCalendar && (
             <IntegrationPlaceholder
               icon="▦"
               title="Calendar integration is not connected yet"
@@ -332,59 +363,21 @@ function Dashboard({ user, onSignOut }) {
           )}
 
           {activePage === 'users' && canManageUsers && (
-            <section className="content-card user-directory-card">
-              <div className="card-heading">
-                <div>
-                  <h2>University accounts</h2>
-                  <p>{user.role === 'ADMIN'
-                    ? 'Admins can create Manager and Teacher accounts.'
-                    : 'Create accounts and assign a role and department.'}</p>
-                </div>
-                <div className="user-directory-actions">
-                  <button className="icon-action" type="button" onClick={loadUserDirectory} aria-label="Refresh users">↻</button>
-                  <button className="primary-action" type="button" onClick={() => {
-                    setCreateUserError('')
-                    setUserForm({
-                      ...initialUserForm,
-                      role: userDirectory.roles[0]?.name || '',
-                    })
-                    setIsCreateUserOpen(true)
-                  }}>
-                    <span aria-hidden="true">+</span> Create user
-                  </button>
-                </div>
-              </div>
-              {isUsersLoading ? (
-                <div className="list-message"><span className="small-spinner" /> Loading users...</div>
-              ) : userDirectory.users.length === 0 ? (
-                <div className="empty-state">
-                  <span className="empty-state-icon">♙</span>
-                  <strong>No user accounts found</strong>
-                  <span>Create an account to give a university member access.</span>
-                </div>
-              ) : (
-                <div className="user-table-wrap">
-                  <table className="user-table">
-                    <thead>
-                      <tr><th>User</th><th>Role</th><th>Department</th><th>Status</th></tr>
-                    </thead>
-                    <tbody>
-                      {userDirectory.users.map((managedUser) => (
-                        <tr key={managedUser.id}>
-                          <td>
-                            <strong>{managedUser.fullName}</strong>
-                            <span>{managedUser.email}</span>
-                          </td>
-                          <td><span className="user-role-pill">{managedUser.role}</span></td>
-                          <td>{managedUser.department || 'Not assigned'}</td>
-                          <td><span className={`user-status status-${managedUser.status.toLowerCase()}`}>{managedUser.status}</span></td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </section>
+            <UserManagement currentUser={user} />
+          )}
+
+          {((activePage === 'requests' && !canReadRequests)
+            || (activePage === 'approvals' && !canReadApprovals)
+            || (activePage === 'documents' && !canReadDocuments)
+            || (activePage === 'calendar' && !canReadCalendar)
+            || (activePage === 'users' && !canManageUsers)) && (
+            <IntegrationPlaceholder
+              icon="⌑"
+              title="Access permissions changed"
+              description="Your access to this section was changed. Choose another section from the menu or refresh your workspace."
+              action={() => setActivePage('overview')}
+              actionLabel="Go to overview"
+            />
           )}
         </div>
       </main>
@@ -424,48 +417,6 @@ function Dashboard({ user, onSignOut }) {
         </div>
       )}
 
-      {isCreateUserOpen && (
-        <div className="modal-backdrop" role="presentation" onMouseDown={(event) => {
-          if (event.target === event.currentTarget && !isCreatingUser) setIsCreateUserOpen(false)
-        }}>
-          <section className="request-modal user-modal" role="dialog" aria-modal="true" aria-labelledby="create-user-title">
-            <div className="modal-heading">
-              <div><p className="page-eyebrow">ACCOUNT MANAGEMENT</p><h2 id="create-user-title">Create user</h2></div>
-              <button type="button" className="modal-close" onClick={() => setIsCreateUserOpen(false)} aria-label="Close dialog">×</button>
-            </div>
-            <form onSubmit={handleCreateUser}>
-              <label htmlFor="user-full-name">Full name</label>
-              <input id="user-full-name" autoComplete="name" maxLength="150" required value={userForm.fullName} onChange={(event) => setUserForm({ ...userForm, fullName: event.target.value })} placeholder="Enter the user's full name" />
-
-              <label htmlFor="user-email">University email</label>
-              <input id="user-email" autoComplete="email" type="email" maxLength="150" required value={userForm.email} onChange={(event) => setUserForm({ ...userForm, email: event.target.value })} placeholder="name@university.edu" />
-
-              <label htmlFor="user-password">Initial password</label>
-              <input id="user-password" autoComplete="new-password" type="password" minLength="12" maxLength="72" required value={userForm.password} onChange={(event) => setUserForm({ ...userForm, password: event.target.value })} placeholder="At least 12 characters" />
-
-              <label htmlFor="user-role">Role</label>
-              <select id="user-role" required value={userForm.role} onChange={(event) => setUserForm({ ...userForm, role: event.target.value })}>
-                {userDirectory.roles.map((role) => <option key={role.name} value={role.name}>{role.name}</option>)}
-              </select>
-
-              <label htmlFor="user-department">Department <span>(optional)</span></label>
-              <select id="user-department" value={userForm.departmentId} onChange={(event) => setUserForm({ ...userForm, departmentId: event.target.value })}>
-                <option value="">No department</option>
-                {userDirectory.departments.map((department) => <option key={department.id} value={department.id}>{department.name}</option>)}
-              </select>
-
-              {user.role === 'ADMIN' && (
-                <p className="role-policy-note">Only a Super Admin can create Admin or Super Admin accounts.</p>
-              )}
-              {createUserError && <div className="form-error" role="alert">{createUserError}</div>}
-              <div className="modal-actions">
-                <button className="secondary-action" type="button" onClick={() => setIsCreateUserOpen(false)} disabled={isCreatingUser}>Cancel</button>
-                <button className="primary-action" type="submit" disabled={isCreatingUser || !userForm.role}>{isCreatingUser ? 'Creating...' : 'Create user'}</button>
-              </div>
-            </form>
-          </section>
-        </div>
-      )}
     </div>
   )
 }

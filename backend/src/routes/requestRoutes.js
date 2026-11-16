@@ -6,17 +6,19 @@ import {
 } from "../controllers/requestController.js";
 import {
   authenticate,
-  authorize
+  authorizePermission
 } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
 router.use(authenticate);
-router.get("/", listRequests);
-router.post("/", authorize("TEACHER"), createRequest);
+router.get("/", authorizePermission("requests", "read"), listRequests);
+router.post("/", authorizePermission("requests", "create"), createRequest);
 router.patch(
   "/:id/status",
-  authorize("MANAGER", "ADMIN", "SUPERADMIN"),
+  authorizePermission("requests", "update"),
+  authorizePermission("approvals", "update"),
+  authorizePermission("approvals", "create"),
   reviewRequest
 );
 

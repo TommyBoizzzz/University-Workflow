@@ -50,6 +50,7 @@ function App() {
   return (
     <Dashboard
       user={user}
+      onUserUpdate={setUser}
       onSignOut={() => {
         signOut()
         setUser(null)

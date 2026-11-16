@@ -353,6 +353,28 @@
   font-size: 11px;
 }
 
+.workspace-success {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+  padding: 11px 14px;
+  border: 1px solid #cce5dc;
+  border-radius: 8px;
+  color: #347565;
+  background: #f2faf6;
+  font-size: 11px;
+}
+
+.workspace-success button {
+  border: 0;
+  color: inherit;
+  background: none;
+  font-size: 17px;
+  cursor: pointer;
+}
+
 .workspace-error button {
   border: 0;
   color: inherit;
@@ -1044,98 +1066,92 @@
   }
 }
 
-.user-directory-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.user-table-wrap {
-  overflow-x: auto;
-}
-
-.user-table {
-  width: 100%;
-  border-collapse: collapse;
-  text-align: left;
-}
-
-.user-table th {
-  padding: 11px 18px;
-  color: #9aa3b1;
-  background: #fafbfc;
-  font-size: 8px;
-  font-weight: 650;
-  letter-spacing: 0.6px;
-  text-transform: uppercase;
-}
-
-.user-table td {
-  padding: 13px 18px;
-  border-top: 1px solid #f0f2f6;
-  color: #788396;
-  font-size: 9px;
-  white-space: nowrap;
-}
-
-.user-table td:first-child {
-  display: grid;
-  gap: 4px;
-}
-
-.user-table td:first-child strong {
-  color: #3d4960;
+.workspace-nav-label {
   font-size: 10px;
-  font-weight: 650;
 }
 
-.user-table td:first-child span {
-  color: #98a1af;
+.workspace-nav-item {
+  font-size: 12px;
+}
+
+.breadcrumb {
+  font-size: 11px;
+}
+
+.topbar-profile-copy strong {
+  font-size: 12px;
+}
+
+.topbar-profile-copy span {
+  font-size: 10px;
+}
+
+.page-eyebrow {
+  font-size: 10px;
+}
+
+.page-subtitle {
+  font-size: 12px;
+}
+
+.primary-action,
+.secondary-action {
+  font-size: 11px;
+}
+
+.stat-label {
+  font-size: 11px;
+}
+
+.stat-card > small {
+  font-size: 10px;
+}
+
+.card-heading h2 {
+  font-size: 14px;
+}
+
+.card-heading p {
+  font-size: 10px;
+}
+
+.request-main > strong {
+  font-size: 11px;
+}
+
+.request-main > span,
+.request-main > small {
+  font-size: 10px;
+}
+
+.request-meta time {
   font-size: 9px;
 }
 
-.user-role-pill {
-  display: inline-flex;
-  padding: 5px 8px;
-  border-radius: 20px;
-  color: #5266b4;
-  background: #eff1ff;
-  font-size: 8px;
-  font-weight: 700;
-}
-
-.user-status {
-  font-size: 8px;
-  font-weight: 650;
-}
-
-.user-status.status-active {
-  color: #47856f;
-}
-
-.role-policy-note {
-  margin: 12px 0 0;
-  color: #8792a3;
+.status-badge {
   font-size: 9px;
-  line-height: 1.5;
+}
+
+.review-actions button {
+  font-size: 9px;
+}
+
+.list-message,
+.empty-state {
+  font-size: 11px;
+}
+
+.empty-state strong {
+  font-size: 12px;
 }
 
 @media (max-width: 620px) {
-  .user-directory-card .card-heading {
-    align-items: flex-start;
-  }
-
-  .user-directory-actions {
-    flex-shrink: 0;
-  }
-
-  .user-directory-actions .primary-action {
+  .workspace-nav-item {
     font-size: 8px;
   }
 
-  .user-table th,
-  .user-table td {
-    padding-right: 12px;
-    padding-left: 12px;
+  .primary-action,
+  .secondary-action {
+    font-size: 9px;
   }
 }

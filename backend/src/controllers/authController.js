@@ -3,6 +3,27 @@ import pool from "../config/database.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
+const permissionResources = ["users", "requests", "approvals", "documents", "calendar"];
+const permissionActions = ["read", "create", "update", "delete"];
+
+const getPermissionsForRole = async (roleName) => {
+  const permissions = Object.fromEntries(permissionResources.map((resource) => [
+    resource,
+    Object.fromEntries(permissionActions.map((action) => [action, false]))
+  ]));
+  const result = await pool.query(
+    `SELECT role_permissions.resource, role_permissions.action, role_permissions.enabled
+     FROM role_permissions
+     JOIN roles ON roles.id = role_permissions.role_id
+     WHERE roles.role_name = $1`,
+    [roleName]
+  );
+  for (const permission of result.rows) {
+    permissions[permission.resource][permission.action] = permission.enabled;
+  }
+  return permissions;
+};
+
 // LOGIN
 export const login = async (req, res) => {
   try {
@@ -98,7 +119,8 @@ export const login = async (req, res) => {
         fullName: user.full_name,
         email: user.email,
         role: user.role_name,
-        department: user.department_name
+        department: user.department_name,
+        permissions: await getPermissionsForRole(user.role_name)
       }
     });
 
@@ -153,7 +175,8 @@ export const getMe = async (req, res) => {
         fullName: user.full_name,
         email: user.email,
         role: user.role_name,
-        department: user.department_name
+        department: user.department_name,
+        permissions: await getPermissionsForRole(user.role_name)
       }
     });
 
