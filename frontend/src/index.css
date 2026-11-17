@@ -3053,6 +3053,154 @@ button {
   padding-right: 4px;
 }
 
+.request-method-picker {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  margin: 0 0 17px;
+  padding: 0;
+  border: 0;
+}
+
+.request-method-picker legend {
+  margin-bottom: 8px;
+  color: #4a566c;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.request-method-picker label {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0 !important;
+  padding: 11px 12px;
+  border: 1px solid #e1e7ef;
+  border-radius: 9px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.request-method-picker label.selected {
+  border-color: #9caddf;
+  background: #f7f8ff;
+}
+
+.request-method-picker label.unavailable {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.request-method-picker input[type="radio"] {
+  flex: 0 0 auto;
+  width: 14px;
+  min-height: 14px;
+  margin: 2px 0 0;
+  padding: 0;
+  accent-color: #657bd2;
+}
+
+.request-method-picker label > span {
+  display: grid;
+  gap: 4px;
+  color: #6f7a8c;
+}
+
+.request-method-picker strong {
+  color: #39475e;
+  font-size: 10px;
+}
+
+.request-method-picker small {
+  color: #8993a2;
+  font-size: 9px;
+  font-weight: 400;
+  line-height: 1.45;
+}
+
+.meeting-document-option {
+  display: grid;
+  min-width: 0;
+  padding: 13px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #fbfcff;
+}
+
+.meeting-document-picker {
+  display: grid;
+  gap: 5px;
+  margin: 0 0 3px !important;
+  padding: 12px;
+  border: 1px dashed #b9c7e3;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.meeting-document-picker strong {
+  overflow-wrap: anywhere;
+  color: #40516d;
+  font-size: 10px;
+}
+
+.meeting-document-picker small {
+  color: #8793a7;
+  font-size: 9px;
+  font-weight: 400;
+}
+
+.meeting-document-picker input[type="file"] {
+  min-height: 30px;
+  margin-top: 5px;
+  padding: 3px;
+  border: 0;
+  font-size: 9px;
+}
+
+.meeting-document-option > label:not(.meeting-document-picker) {
+  margin-top: 14px;
+}
+
+.meeting-document-option > textarea {
+  min-height: 64px;
+}
+
+.meeting-document-privacy {
+  margin: 9px 0 0;
+  color: #8a94a3;
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+.document-agenda-button {
+  justify-self: start;
+  min-height: 36px;
+  margin-top: 12px;
+}
+
+.meeting-document-summary {
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
+  padding: 11px;
+  border-left: 3px solid #7d91d4;
+  border-radius: 6px;
+  background: #f3f5fc;
+}
+
+.meeting-document-summary strong {
+  color: #45577d;
+  font-size: 10px;
+}
+
+.meeting-document-summary p {
+  margin: 0;
+  color: #78849a;
+  font-size: 9px;
+  line-height: 1.55;
+}
+
 .meeting-slot-fields {
   display: grid;
 }

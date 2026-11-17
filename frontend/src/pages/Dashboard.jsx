@@ -7,6 +7,7 @@ import {
 } from '../services/requestService.js'
 import { getCurrentUser } from '../services/authService.js'
 import { getAvailability, getScheduleRecommendations } from '../services/calendarService.js'
+import { createDocumentBrief } from '../services/documentService.js'
 import Calendar from './Calendar.jsx'
 import Documents from './Documents.jsx'
 import UserManagement from './UserManagement.jsx'
@@ -43,7 +44,12 @@ function Dashboard({ user, onUserUpdate, onSignOut }) {
   const [successMessage, setSuccessMessage] = useState('')
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [form, setForm] = useState(initialForm)
+  const [requestMethod, setRequestMethod] = useState('form')
+  const [documentFile, setDocumentFile] = useState(null)
+  const [documentFocus, setDocumentFocus] = useState('')
+  const [documentBrief, setDocumentBrief] = useState(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isDocumentAnalyzing, setIsDocumentAnalyzing] = useState(false)
   const [availableSlots, setAvailableSlots] = useState([])
   const [availabilityWarning, setAvailabilityWarning] = useState('')
   const [isAvailabilityLoading, setIsAvailabilityLoading] = useState(false)
@@ -169,6 +175,10 @@ function Dashboard({ user, onUserUpdate, onSignOut }) {
     event.preventDefault()
     setError('')
     setSuccessMessage('')
+    if (requestMethod === 'document' && (!documentBrief || !form.agenda)) {
+      setError('Read the document and create its agenda before submitting this request.')
+      return
+    }
     setIsSubmitting(true)
     try {
       await createRequest({
@@ -210,6 +220,50 @@ function Dashboard({ user, onUserUpdate, onSignOut }) {
       setError(agendaError.message || 'Unable to generate an agenda.')
     } finally {
       setIsAgendaGenerating(false)
+    }
+  }
+
+  const handlePrepareDocumentAgenda = async () => {
+    setError('')
+    setIsAgendaGenerating(true)
+    try {
+      let brief = documentBrief
+      let meetingDetails
+      if (!brief) {
+        if (!documentFile) {
+          setError('Choose a PDF or Word document first.')
+          return
+        }
+        setIsDocumentAnalyzing(true)
+        const result = await createDocumentBrief({ file: documentFile, topic: documentFocus })
+        brief = result.document.brief
+        setDocumentBrief(brief)
+        const topic = documentFocus.trim() || brief.keyPoints?.slice(0, 3).join('; ') || ''
+        const description = [
+          brief.executiveSummary,
+          brief.keyPoints?.length ? `Key points: ${brief.keyPoints.join('; ')}` : '',
+          brief.dates?.length ? `Important dates: ${brief.dates.join('; ')}` : '',
+          brief.actions?.length ? `Follow-up actions: ${brief.actions.map((action) => action.task).join('; ')}` : '',
+          brief.risks?.length ? `Risks and open questions: ${brief.risks.join('; ')}` : '',
+        ].filter(Boolean).join('\n').slice(0, 10000)
+        const agendaTopic = topic.slice(0, 2000)
+        meetingDetails = { title: brief.title, topic: agendaTopic, description }
+        setForm((previous) => ({ ...previous, ...meetingDetails, agenda: null }))
+      } else {
+        meetingDetails = {
+          title: form.title,
+          topic: form.topic,
+          description: form.description,
+        }
+      }
+
+      const result = await generateAgenda(meetingDetails)
+      setForm((previous) => ({ ...previous, agenda: result.agenda }))
+    } catch (agendaError) {
+      setError(agendaError.message || 'Unable to read the document and create an agenda.')
+    } finally {
+      setIsAgendaGenerating(false)
+      setIsDocumentAnalyzing(false)
     }
   }
 
@@ -266,6 +320,10 @@ function Dashboard({ user, onUserUpdate, onSignOut }) {
       meetingDate: slot?.date || getTodayDate(),
       meetingStart: slot?.start || '',
     })
+    setRequestMethod('form')
+    setDocumentFile(null)
+    setDocumentFocus('')
+    setDocumentBrief(null)
     setIsAvailabilityLoading(true)
     setScheduleRecommendations([])
     setError('')
@@ -489,14 +547,99 @@ function Dashboard({ user, onUserUpdate, onSignOut }) {
               <button type="button" className="modal-close" onClick={() => setIsCreateOpen(false)} aria-label="Close dialog">×</button>
             </div>
             <form onSubmit={handleCreateRequest}>
-              <label htmlFor="request-title">Title</label>
-              <input id="request-title" maxLength="255" required value={form.title} onChange={(event) => updateMeetingDetails('title', event.target.value)} placeholder="What do you need help with?" />
+              <fieldset className="request-method-picker">
+                <legend>Choose how to prepare your request</legend>
+                <label className={requestMethod === 'form' ? 'selected' : ''}>
+                  <input
+                    type="radio"
+                    name="request-method"
+                    value="form"
+                    checked={requestMethod === 'form'}
+                    onChange={() => setRequestMethod('form')}
+                  />
+                  <span><strong>Option 1: Fill in this form</strong><small>Enter the meeting details yourself.</small></span>
+                </label>
+                <label className={`${requestMethod === 'document' ? 'selected' : ''} ${!canCreateBrief ? 'unavailable' : ''}`}>
+                  <input
+                    type="radio"
+                    name="request-method"
+                    value="document"
+                    checked={requestMethod === 'document'}
+                    disabled={!canCreateBrief}
+                    onChange={() => setRequestMethod('document')}
+                  />
+                  <span>
+                    <strong>Option 2: Use a document</strong>
+                    <small>{canCreateBrief ? 'Upload a document to read it and create an agenda.' : 'Documents: Create permission is required.'}</small>
+                  </span>
+                </label>
+              </fieldset>
 
-              <label htmlFor="request-topic">Topic <span>(optional)</span></label>
-              <input id="request-topic" value={form.topic} onChange={(event) => updateMeetingDetails('topic', event.target.value)} placeholder="Add a short topic" />
+              {requestMethod === 'document' && (
+                <section className="meeting-document-option">
+                  <label className="meeting-document-picker" htmlFor="meeting-document-file">
+                    <strong>{documentFile ? documentFile.name : 'Choose a PDF or Word document'}</strong>
+                    <small>Upload a PDF or .docx file (up to 10 MB).</small>
+                    <input
+                      id="meeting-document-file"
+                      type="file"
+                      accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                      disabled={isDocumentAnalyzing || Boolean(documentBrief)}
+                      onChange={(event) => {
+                        const selectedFile = event.target.files?.[0] || null
+                        setDocumentFile(selectedFile)
+                        setDocumentBrief(null)
+                        setForm((previous) => ({ ...previous, title: '', topic: '', description: '', agenda: null }))
+                      }}
+                    />
+                  </label>
+                  <label htmlFor="meeting-document-focus">What should the agenda focus on? <span>(optional)</span></label>
+                  <textarea
+                    id="meeting-document-focus"
+                    rows="2"
+                    maxLength="2000"
+                    value={documentFocus}
+                    disabled={isDocumentAnalyzing || Boolean(documentBrief)}
+                    onChange={(event) => setDocumentFocus(event.target.value)}
+                    placeholder="For example, focus on the proposal and its deadlines."
+                  />
+                  <p className="meeting-document-privacy">The document is sent to Google Gemini for analysis. Its generated brief is saved in Documents; the original file is not retained.</p>
+                  {!documentBrief && (
+                    <button
+                      className="secondary-action document-agenda-button"
+                      type="button"
+                      onClick={handlePrepareDocumentAgenda}
+                      disabled={isAgendaGenerating || isDocumentAnalyzing || !documentFile || isSubmitting}
+                    >
+                      {isDocumentAnalyzing ? 'Reading document...' : isAgendaGenerating ? 'Creating agenda...' : 'Read document & create agenda'}
+                    </button>
+                  )}
+                  {documentBrief && (
+                    <div className="meeting-document-summary">
+                      <strong>Document read: {documentBrief.title}</strong>
+                      <p>{documentBrief.executiveSummary}</p>
+                    </div>
+                  )}
+                  {documentBrief && (
+                    <MeetingDetailFields form={form} onUpdate={updateMeetingDetails} />
+                  )}
+                </section>
+              )}
 
-              <label htmlFor="request-description">Details <span>(optional)</span></label>
-              <textarea id="request-description" rows="4" value={form.description} onChange={(event) => updateMeetingDetails('description', event.target.value)} placeholder="Share any useful context" />
+              {requestMethod === 'form' && (
+                <>
+                  <MeetingDetailFields form={form} onUpdate={updateMeetingDetails} />
+                  <div className="agenda-generator">
+                    <div>
+                      <strong>Meeting agenda</strong>
+                      <span>{form.agenda ? 'Gemini agenda ready and will be included with your request.' : 'Generate an agenda with Gemini before you submit.'}</span>
+                    </div>
+                    <button className="secondary-action" type="button" onClick={handleGenerateAgenda} disabled={!form.title.trim() || isAgendaGenerating || isSubmitting}>
+                      {isAgendaGenerating ? 'Generating...' : form.agenda ? 'Regenerate agenda' : 'Generate with Gemini'}
+                    </button>
+                  </div>
+                </>
+              )}
 
               <div className="meeting-slot-fields">
                 <label htmlFor="meeting-date">Preferred date</label>
@@ -556,15 +699,17 @@ function Dashboard({ user, onUserUpdate, onSignOut }) {
                 )}
               </div>
 
-              <div className="agenda-generator">
-                <div>
-                  <strong>Meeting agenda</strong>
-                  <span>{form.agenda ? 'Gemini agenda ready and will be included with your request.' : 'Generate an agenda with Gemini before you submit.'}</span>
+              {requestMethod === 'document' && documentBrief && (
+                <div className="agenda-generator">
+                  <div>
+                    <strong>Meeting agenda</strong>
+                    <span>{form.agenda ? 'Agenda based on the document is ready.' : 'Create the agenda from the analyzed document before submitting.'}</span>
+                  </div>
+                  <button className="secondary-action" type="button" onClick={handlePrepareDocumentAgenda} disabled={isAgendaGenerating || isSubmitting}>
+                    {isAgendaGenerating ? 'Generating...' : form.agenda ? 'Regenerate agenda' : 'Create agenda'}
+                  </button>
                 </div>
-                <button className="secondary-action" type="button" onClick={handleGenerateAgenda} disabled={!form.title.trim() || isAgendaGenerating || isSubmitting}>
-                  {isAgendaGenerating ? 'Generating...' : form.agenda ? 'Regenerate agenda' : 'Generate with Gemini'}
-                </button>
-              </div>
+              )}
               {form.agenda && (
                 <div className="generated-agenda-preview">
                   <strong>{form.agenda.title}</strong>
@@ -577,7 +722,7 @@ function Dashboard({ user, onUserUpdate, onSignOut }) {
               {error && <div className="form-error" role="alert">{error}</div>}
               <div className="modal-actions">
                 <button className="secondary-action" type="button" onClick={() => setIsCreateOpen(false)} disabled={isSubmitting}>Cancel</button>
-                <button className="primary-action" type="submit" disabled={isSubmitting || !form.meetingStart}>{isSubmitting ? 'Submitting...' : 'Submit meeting request'}</button>
+                <button className="primary-action" type="submit" disabled={isSubmitting || isDocumentAnalyzing || !form.meetingStart || (requestMethod === 'document' && (!documentBrief || !form.agenda))}>{isSubmitting ? 'Submitting...' : 'Submit meeting request'}</button>
               </div>
             </form>
           </section>
@@ -585,6 +730,21 @@ function Dashboard({ user, onUserUpdate, onSignOut }) {
       )}
 
     </div>
+  )
+}
+
+function MeetingDetailFields({ form, onUpdate }) {
+  return (
+    <>
+      <label htmlFor="request-title">Title</label>
+      <input id="request-title" maxLength="255" required value={form.title} onChange={(event) => onUpdate('title', event.target.value)} placeholder="What do you need help with?" />
+
+      <label htmlFor="request-topic">Topic <span>(optional)</span></label>
+      <input id="request-topic" maxLength="2000" value={form.topic} onChange={(event) => onUpdate('topic', event.target.value)} placeholder="Add a short topic" />
+
+      <label htmlFor="request-description">Details <span>(optional)</span></label>
+      <textarea id="request-description" rows="4" maxLength="10000" value={form.description} onChange={(event) => onUpdate('description', event.target.value)} placeholder="Share any useful context" />
+    </>
   )
 }
 
