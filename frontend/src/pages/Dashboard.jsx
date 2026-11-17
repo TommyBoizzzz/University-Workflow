@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   createRequest,
+  deleteRequest,
   generateAgenda,
   getRequests,
   reviewRequest,
@@ -42,6 +43,7 @@ function Dashboard({ user, onUserUpdate, onSignOut }) {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
+  const [completedFlowReport, setCompletedFlowReport] = useState(null)
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [form, setForm] = useState(initialForm)
   const [requestMethod, setRequestMethod] = useState('form')
@@ -181,7 +183,7 @@ function Dashboard({ user, onUserUpdate, onSignOut }) {
     }
     setIsSubmitting(true)
     try {
-      await createRequest({
+      const result = await createRequest({
         type: 'MEETING',
         title: form.title,
         topic: form.topic,
@@ -190,6 +192,14 @@ function Dashboard({ user, onUserUpdate, onSignOut }) {
         meetingStart: form.meetingStart,
         ...(form.agenda ? { agenda: form.agenda } : {}),
       })
+      if (requestMethod === 'document' && documentBrief && form.agenda) {
+        setCompletedFlowReport({
+          request: result.request,
+          fileName: documentFile?.name || 'Uploaded document',
+          brief: documentBrief,
+          agenda: form.agenda,
+        })
+      }
       setForm(initialForm)
       setIsCreateOpen(false)
       setSuccessMessage('Your meeting request was submitted. The selected time is held until it is approved or rejected.')
@@ -223,46 +233,36 @@ function Dashboard({ user, onUserUpdate, onSignOut }) {
     }
   }
 
-  const handlePrepareDocumentAgenda = async () => {
+  const handleReadDocument = async () => {
     setError('')
-    setIsAgendaGenerating(true)
-    try {
-      let brief = documentBrief
-      let meetingDetails
-      if (!brief) {
-        if (!documentFile) {
-          setError('Choose a PDF or Word document first.')
-          return
-        }
-        setIsDocumentAnalyzing(true)
-        const result = await createDocumentBrief({ file: documentFile, topic: documentFocus })
-        brief = result.document.brief
-        setDocumentBrief(brief)
-        const topic = documentFocus.trim() || brief.keyPoints?.slice(0, 3).join('; ') || ''
-        const description = [
-          brief.executiveSummary,
-          brief.keyPoints?.length ? `Key points: ${brief.keyPoints.join('; ')}` : '',
-          brief.dates?.length ? `Important dates: ${brief.dates.join('; ')}` : '',
-          brief.actions?.length ? `Follow-up actions: ${brief.actions.map((action) => action.task).join('; ')}` : '',
-          brief.risks?.length ? `Risks and open questions: ${brief.risks.join('; ')}` : '',
-        ].filter(Boolean).join('\n').slice(0, 10000)
-        const agendaTopic = topic.slice(0, 2000)
-        meetingDetails = { title: brief.title, topic: agendaTopic, description }
-        setForm((previous) => ({ ...previous, ...meetingDetails, agenda: null }))
-      } else {
-        meetingDetails = {
-          title: form.title,
-          topic: form.topic,
-          description: form.description,
-        }
-      }
+    if (!documentFile) {
+      setError('Choose a PDF or Word document first.')
+      return
+    }
 
-      const result = await generateAgenda(meetingDetails)
-      setForm((previous) => ({ ...previous, agenda: result.agenda }))
-    } catch (agendaError) {
-      setError(agendaError.message || 'Unable to read the document and create an agenda.')
+    setIsDocumentAnalyzing(true)
+    try {
+      const result = await createDocumentBrief({ file: documentFile, topic: documentFocus })
+      const brief = result.document.brief
+      const topic = documentFocus.trim() || brief.keyPoints?.slice(0, 3).join('; ') || ''
+      const description = [
+        brief.executiveSummary,
+        brief.keyPoints?.length ? `Key points: ${brief.keyPoints.join('; ')}` : '',
+        brief.dates?.length ? `Important dates: ${brief.dates.join('; ')}` : '',
+        brief.actions?.length ? `Follow-up actions: ${brief.actions.map((action) => action.task).join('; ')}` : '',
+        brief.risks?.length ? `Risks and open questions: ${brief.risks.join('; ')}` : '',
+      ].filter(Boolean).join('\n').slice(0, 10000)
+      setDocumentBrief(brief)
+      setForm((previous) => ({
+        ...previous,
+        title: brief.title,
+        topic: topic.slice(0, 2000),
+        description,
+        agenda: null,
+      }))
+    } catch (documentError) {
+      setError(documentError.message || 'Unable to read the document.')
     } finally {
-      setIsAgendaGenerating(false)
       setIsDocumentAnalyzing(false)
     }
   }
@@ -307,6 +307,38 @@ function Dashboard({ user, onUserUpdate, onSignOut }) {
       setError(reviewError.message || 'Unable to update this request.')
     } finally {
       setWorkingRequestId(null)
+    }
+  }
+
+  const handleDeleteRequest = async (request) => {
+    if (!window.confirm(`Delete "${request.title}"? Only pending requests can be deleted.`)) return
+
+    setError('')
+    setSuccessMessage('')
+    setWorkingRequestId(request.id)
+    try {
+      await deleteRequest(request.id)
+      setSuccessMessage('Request deleted.')
+      await loadRequests()
+    } catch (deleteError) {
+      setError(deleteError.message || 'Unable to delete this request.')
+    } finally {
+      setWorkingRequestId(null)
+    }
+  }
+
+  const handleExportRequest = (request, format) => {
+    setError('')
+    try {
+      if (format === 'pdf') {
+        openRequestPdf(request)
+        setSuccessMessage('The request is ready in the print dialog. Choose Save as PDF to export it.')
+      } else {
+        downloadRequestWordDocument(request)
+        setSuccessMessage('Word document exported.')
+      }
+    } catch (exportError) {
+      setError(exportError.message || 'Unable to export this request.')
     }
   }
 
@@ -421,6 +453,18 @@ function Dashboard({ user, onUserUpdate, onSignOut }) {
               <button type="button" onClick={() => setSuccessMessage('')} aria-label="Dismiss message">×</button>
             </div>
           )}
+          {completedFlowReport && (
+            <section className="meeting-process-export completed-flow-export" aria-label="Export submitted meeting process">
+              <div>
+                <strong>Export your completed meeting process</strong>
+                <span>Request #{completedFlowReport.request.id} · {completedFlowReport.request.status}</span>
+              </div>
+              <button className="secondary-action" type="button" onClick={() => window.print()}>
+                Export process as PDF
+              </button>
+              <small>In the print dialog, choose “Save as PDF”.</small>
+            </section>
+          )}
 
           {activePage === 'overview' && (
             <>
@@ -457,6 +501,10 @@ function Dashboard({ user, onUserUpdate, onSignOut }) {
                     isTeacher={isTeacher}
                     canReview={false}
                     onReview={handleReview}
+                    onDelete={handleDeleteRequest}
+                    onExport={handleExportRequest}
+                    userId={user.id}
+                    isSuperAdmin={user.role === 'SUPERADMIN'}
                     workingRequestId={workingRequestId}
                   />
                 </section>
@@ -481,6 +529,10 @@ function Dashboard({ user, onUserUpdate, onSignOut }) {
                 isTeacher={isTeacher}
                 canReview={canReview}
                 onReview={handleReview}
+                onDelete={handleDeleteRequest}
+                onExport={handleExportRequest}
+                userId={user.id}
+                isSuperAdmin={user.role === 'SUPERADMIN'}
                 workingRequestId={workingRequestId}
               />
             </section>
@@ -501,6 +553,10 @@ function Dashboard({ user, onUserUpdate, onSignOut }) {
                 isTeacher={isTeacher}
                 canReview={canReview}
                 onReview={handleReview}
+                onDelete={handleDeleteRequest}
+                onExport={handleExportRequest}
+                userId={user.id}
+                isSuperAdmin={user.role === 'SUPERADMIN'}
                 workingRequestId={workingRequestId}
               />
             </section>
@@ -577,6 +633,12 @@ function Dashboard({ user, onUserUpdate, onSignOut }) {
 
               {requestMethod === 'document' && (
                 <section className="meeting-document-option">
+                  <MeetingWorkflowSteps
+                    file={documentFile}
+                    brief={documentBrief}
+                    agenda={form.agenda}
+                    meetingStart={form.meetingStart}
+                  />
                   <label className="meeting-document-picker" htmlFor="meeting-document-file">
                     <strong>{documentFile ? documentFile.name : 'Choose a PDF or Word document'}</strong>
                     <small>Upload a PDF or .docx file (up to 10 MB).</small>
@@ -608,20 +670,36 @@ function Dashboard({ user, onUserUpdate, onSignOut }) {
                     <button
                       className="secondary-action document-agenda-button"
                       type="button"
-                      onClick={handlePrepareDocumentAgenda}
-                      disabled={isAgendaGenerating || isDocumentAnalyzing || !documentFile || isSubmitting}
+                      onClick={handleReadDocument}
+                      disabled={isDocumentAnalyzing || !documentFile || isSubmitting}
                     >
-                      {isDocumentAnalyzing ? 'Reading document...' : isAgendaGenerating ? 'Creating agenda...' : 'Read document & create agenda'}
+                      {isDocumentAnalyzing ? 'Reading document...' : 'Read document'}
                     </button>
                   )}
                   {documentBrief && (
                     <div className="meeting-document-summary">
                       <strong>Document read: {documentBrief.title}</strong>
-                      <p>{documentBrief.executiveSummary}</p>
+                      <DocumentBriefDetails brief={documentBrief} />
                     </div>
                   )}
                   {documentBrief && (
                     <MeetingDetailFields form={form} onUpdate={updateMeetingDetails} />
+                  )}
+                  {documentBrief && (
+                    <div className="agenda-generator">
+                      <div>
+                        <strong>Meeting agenda</strong>
+                        <span>{form.agenda ? 'Agenda based on your meeting details is ready.' : 'Review the meeting details above, then generate the agenda.'}</span>
+                      </div>
+                      <button
+                        className="secondary-action"
+                        type="button"
+                        onClick={handleGenerateAgenda}
+                        disabled={!form.title.trim() || isAgendaGenerating || isSubmitting}
+                      >
+                        {isAgendaGenerating ? 'Generating...' : form.agenda ? 'Regenerate agenda' : 'Generate agenda'}
+                      </button>
+                    </div>
                   )}
                 </section>
               )}
@@ -699,26 +777,9 @@ function Dashboard({ user, onUserUpdate, onSignOut }) {
                 )}
               </div>
 
-              {requestMethod === 'document' && documentBrief && (
-                <div className="agenda-generator">
-                  <div>
-                    <strong>Meeting agenda</strong>
-                    <span>{form.agenda ? 'Agenda based on the document is ready.' : 'Create the agenda from the analyzed document before submitting.'}</span>
-                  </div>
-                  <button className="secondary-action" type="button" onClick={handlePrepareDocumentAgenda} disabled={isAgendaGenerating || isSubmitting}>
-                    {isAgendaGenerating ? 'Generating...' : form.agenda ? 'Regenerate agenda' : 'Create agenda'}
-                  </button>
-                </div>
-              )}
               {form.agenda && (
-                <div className="generated-agenda-preview">
-                  <strong>{form.agenda.title}</strong>
-                  {form.agenda.items.map((item, index) => (
-                    <div key={`${item.title}-${index}`}><span>{item.title}</span><small>{item.durationMinutes} min</small></div>
-                  ))}
-                </div>
+                <AgendaPreview agenda={form.agenda} />
               )}
-
               {error && <div className="form-error" role="alert">{error}</div>}
               <div className="modal-actions">
                 <button className="secondary-action" type="button" onClick={() => setIsCreateOpen(false)} disabled={isSubmitting}>Cancel</button>
@@ -729,7 +790,156 @@ function Dashboard({ user, onUserUpdate, onSignOut }) {
         </div>
       )}
 
+      {completedFlowReport && (
+        <MeetingFlowPrintReport
+          request={completedFlowReport.request}
+          fileName={completedFlowReport.fileName}
+          brief={completedFlowReport.brief}
+          agenda={completedFlowReport.agenda}
+        />
+      )}
+
     </div>
+  )
+}
+
+function MeetingWorkflowSteps({ file, brief, agenda, meetingStart }) {
+  const steps = [
+    { title: 'Upload document', complete: Boolean(file) },
+    { title: 'Read & build brief', complete: Boolean(brief) },
+    { title: 'Create agenda', complete: Boolean(agenda) },
+    { title: 'Review & submit', complete: false, ready: Boolean(agenda && meetingStart) },
+  ]
+  const currentStep = steps.findIndex((step) => !step.complete)
+
+  return (
+    <ol className="meeting-process-steps" aria-label="Document meeting request workflow">
+      {steps.map((step, index) => (
+        <li
+          className={`${step.complete ? 'complete' : ''} ${index === currentStep ? 'current' : ''}`}
+          key={step.title}
+          aria-current={index === currentStep ? 'step' : undefined}
+        >
+          <span className="meeting-process-number">{step.complete ? '✓' : index + 1}</span>
+          <strong>{step.title}</strong>
+          <small>{step.complete ? 'Complete' : step.ready ? 'Ready for you' : index === currentStep ? 'In progress' : 'Next'}</small>
+        </li>
+      ))}
+    </ol>
+  )
+}
+
+function DocumentBriefDetails({ brief }) {
+  return (
+    <div className="meeting-brief-details">
+      <section>
+        <h4>Executive summary</h4>
+        <p>{brief.executiveSummary}</p>
+      </section>
+      <BriefDetailList title="Key points" items={brief.keyPoints} emptyMessage="No key points were identified." />
+      <BriefDetailList title="Important dates" items={brief.dates} emptyMessage="No dates were identified." />
+      <section>
+        <h4>Follow-up actions</h4>
+        {brief.actions?.length ? (
+          <ul className="meeting-brief-actions">
+            {brief.actions.map((action, index) => (
+              <li key={`${action.task}-${index}`}>
+                <strong>{action.task}</strong>
+                <span>{[
+                  action.owner ? `Owner: ${action.owner}` : '',
+                  action.dueDate ? `Due: ${action.dueDate}` : '',
+                ].filter(Boolean).join(' · ') || 'Owner and due date not specified'}</span>
+              </li>
+            ))}
+          </ul>
+        ) : <p>No follow-up actions were identified.</p>}
+      </section>
+      <BriefDetailList title="Risks and open questions" items={brief.risks} emptyMessage="No specific risks or open questions were identified." />
+    </div>
+  )
+}
+
+function BriefDetailList({ title, items, emptyMessage }) {
+  return (
+    <section>
+      <h4>{title}</h4>
+      {items?.length ? (
+        <ul>{items.map((item, index) => <li key={`${index}-${item}`}>{item}</li>)}</ul>
+      ) : <p>{emptyMessage}</p>}
+    </section>
+  )
+}
+
+function AgendaPreview({ agenda }) {
+  return (
+    <div className="generated-agenda-preview">
+      <strong>{agenda.title}</strong>
+      {agenda.objectives?.length > 0 && (
+        <section>
+          <h4>Objectives</h4>
+          <ul>{agenda.objectives.map((objective, index) => <li key={`${index}-${objective}`}>{objective}</li>)}</ul>
+        </section>
+      )}
+      <section>
+        <h4>Agenda</h4>
+        <ol>
+          {agenda.items.map((item, index) => (
+            <li key={`${item.title}-${index}`}>
+              <div><span>{item.title}</span><small>{item.durationMinutes} min</small></div>
+              {item.details && <p>{item.details}</p>}
+            </li>
+          ))}
+        </ol>
+      </section>
+      {agenda.outcomes?.length > 0 && (
+        <section>
+          <h4>Expected outcomes</h4>
+          <ul>{agenda.outcomes.map((outcome, index) => <li key={`${index}-${outcome}`}>{outcome}</li>)}</ul>
+        </section>
+      )}
+    </div>
+  )
+}
+
+function MeetingFlowPrintReport({ request, fileName, brief, agenda }) {
+  return (
+    <article className="meeting-flow-print-report">
+      <header>
+        <p>UNIVERSITY WORKFLOW · MEETING PROCESS</p>
+        <h1>{request.title || brief.title}</h1>
+        <span>Submitted document analysis and meeting agenda report</span>
+      </header>
+      <section>
+        <h2>Process flow</h2>
+        <ol>
+          <li><strong>Document submitted:</strong> {fileName}</li>
+          <li><strong>Document read:</strong> detailed brief prepared from the source.</li>
+          <li><strong>Agenda created:</strong> agenda generated from the brief and meeting details.</li>
+          <li><strong>Meeting request submitted:</strong> Request #{request.id} was submitted for review.</li>
+        </ol>
+      </section>
+      <section>
+        <h2>Meeting details</h2>
+        <dl>
+          <div><dt>Request ID</dt><dd>{request.id}</dd></div>
+          <div><dt>Status</dt><dd>{request.status}</dd></div>
+          <div><dt>Topic</dt><dd>{request.topic || 'Not specified'}</dd></div>
+          <div><dt>Meeting date</dt><dd>{request.meetingDate ? formatDate(request.meetingDate) : 'Not selected'}</dd></div>
+          <div><dt>Meeting time</dt><dd>{request.meetingStart ? `${request.meetingStart.slice(0, 5)} (60 minutes)` : 'Not selected'}</dd></div>
+          <div><dt>Submitted</dt><dd>{request.createdAt ? formatDate(request.createdAt) : 'Not recorded'}</dd></div>
+        </dl>
+        <p className="meeting-flow-report-note">The request has been submitted and is waiting for review. Check its current status in the app.</p>
+      </section>
+      <section>
+        <h2>Detailed document brief</h2>
+        <DocumentBriefDetails brief={brief} />
+      </section>
+      <section>
+        <h2>Generated meeting agenda</h2>
+        <AgendaPreview agenda={agenda} />
+      </section>
+      <footer>Generated from {fileName} · Review source details before acting on dates, owners, or recommendations.</footer>
+    </article>
   )
 }
 
@@ -748,7 +958,18 @@ function MeetingDetailFields({ form, onUpdate }) {
   )
 }
 
-function RequestList({ requests, isLoading, isTeacher, canReview, onReview, workingRequestId }) {
+function RequestList({
+  requests,
+  isLoading,
+  isTeacher,
+  canReview,
+  onReview,
+  onDelete,
+  onExport,
+  userId,
+  isSuperAdmin,
+  workingRequestId,
+}) {
   if (isLoading) {
     return <div className="list-message"><span className="small-spinner" /> Loading requests...</div>
   }
@@ -764,46 +985,185 @@ function RequestList({ requests, isLoading, isTeacher, canReview, onReview, work
   }
 
   return (
-    <div className="request-list">
-      {requests.map((request) => (
-        <article className="request-row" key={request.id}>
-          <span className={`request-type-icon ${request.type === 'MEETING' ? 'meeting' : 'document'}`}>
-            {request.type === 'MEETING' ? '◷' : '▤'}
-          </span>
-          <div className="request-main">
-            <strong>{request.title}</strong>
-            <span>
-              {request.type === 'MEETING' ? 'Meeting request' : 'Document request'}
-              {!isTeacher && request.submittedBy ? ` · ${request.submittedBy}` : ''}
-              {request.department ? ` · ${request.department}` : ''}
-            </span>
-            {request.description && <small>{request.description}</small>}
-            {request.meetingDate && (
-              <small>Requested time: {formatDate(request.meetingDate)} · {request.meetingStart?.slice(0, 5)}</small>
-            )}
-            {request.agenda?.items?.length > 0 && (
-              <details className="request-agenda-details">
-                <summary>AI agenda · {request.agenda.items.length} topics</summary>
-                <ol>{request.agenda.items.map((item, index) => <li key={`${item.title}-${index}`}>{item.title} <span>({item.durationMinutes} min)</span></li>)}</ol>
-              </details>
-            )}
-          </div>
-          <div className="request-meta">
-            <span className={`status-badge status-${request.status.toLowerCase()}`}>{request.status}</span>
-            <time dateTime={request.createdAt}>{formatDate(request.createdAt)}</time>
-          </div>
-          {canReview && request.status === 'PENDING' && (
-            <div className="review-actions">
-              <button className="approve-button" type="button" onClick={() => onReview(request.id, 'APPROVED')} disabled={workingRequestId === request.id}>
-                {workingRequestId === request.id ? 'Saving...' : 'Approve'}
-              </button>
-              <button className="reject-button" type="button" onClick={() => onReview(request.id, 'REJECTED')} disabled={workingRequestId === request.id}>Reject</button>
-            </div>
-          )}
-        </article>
-      ))}
+    <div className="request-grid-scroll">
+      <table className="request-grid">
+        <thead>
+          <tr>
+            <th scope="col">Request</th>
+            <th scope="col">Meeting</th>
+            <th scope="col">Status</th>
+            <th scope="col">Submitted</th>
+            <th scope="col">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {requests.map((request) => {
+            const isWorking = workingRequestId === request.id
+            const canDelete = request.status === 'PENDING'
+              && (isSuperAdmin || String(request.teacherId) === String(userId))
+
+            return (
+              <tr key={request.id}>
+                <td>
+                  <div className="request-grid-primary">
+                    <span className={`request-type-icon ${request.type === 'MEETING' ? 'meeting' : 'document'}`}>
+                      {request.type === 'MEETING' ? '◷' : '▤'}
+                    </span>
+                    <div className="request-main">
+                      <strong title={request.title}>{request.title}</strong>
+                      <span>
+                        {request.type === 'MEETING' ? 'Meeting request' : 'Document request'}
+                        {!isTeacher && request.submittedBy ? ` · ${request.submittedBy}` : ''}
+                        {request.department ? ` · ${request.department}` : ''}
+                      </span>
+                      {request.description && (
+                        <details className="request-description-details">
+                          <summary>View details</summary>
+                          <p>{request.description}</p>
+                        </details>
+                      )}
+                      {request.agenda?.items?.length > 0 && (
+                        <details className="request-agenda-details">
+                          <summary>Agenda · {request.agenda.items.length} topics</summary>
+                          <ol>{request.agenda.items.map((item, index) => <li key={`${item.title}-${index}`}>{item.title} <span>({item.durationMinutes} min)</span></li>)}</ol>
+                        </details>
+                      )}
+                    </div>
+                  </div>
+                </td>
+                <td className="request-grid-meeting">
+                  {request.meetingDate
+                    ? <>{formatDate(request.meetingDate)}<small>{request.meetingStart?.slice(0, 5) || ''}</small></>
+                    : <span className="request-grid-muted">Not scheduled</span>}
+                </td>
+                <td><span className={`status-badge status-${request.status.toLowerCase()}`}>{request.status}</span></td>
+                <td><time dateTime={request.createdAt}>{formatDate(request.createdAt)}</time></td>
+                <td>
+                  <div className="request-grid-actions">
+                    <button className="request-export-button" type="button" onClick={() => onExport(request, 'pdf')} disabled={isWorking}>
+                      PDF
+                    </button>
+                    <button className="request-export-button" type="button" onClick={() => onExport(request, 'word')} disabled={isWorking}>
+                      Word
+                    </button>
+                    {canDelete && (
+                      <button
+                        className="request-delete-button"
+                        type="button"
+                        onClick={() => onDelete(request)}
+                        disabled={isWorking}
+                      >
+                        Delete
+                      </button>
+                    )}
+                    {canReview && request.status === 'PENDING' && (
+                      <div className="request-grid-review-actions">
+                        <button className="approve-button" type="button" onClick={() => onReview(request.id, 'APPROVED')} disabled={isWorking}>
+                          {isWorking ? 'Saving...' : 'Approve'}
+                        </button>
+                        <button className="reject-button" type="button" onClick={() => onReview(request.id, 'REJECTED')} disabled={isWorking}>Reject</button>
+                      </div>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            )
+          })}
+        </tbody>
+      </table>
     </div>
   )
+}
+
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;')
+}
+
+function getRequestExportHtml(request) {
+  const agenda = request.agenda || {}
+  const listSection = (title, items) => (
+    Array.isArray(items) && items.length
+      ? `<section><h2>${escapeHtml(title)}</h2><ul>${items.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul></section>`
+      : ''
+  )
+  const agendaItems = Array.isArray(agenda.items) ? agenda.items : []
+  const meetingTime = request.meetingStart
+    ? `${request.meetingStart.slice(0, 5)} (${request.meetingEnd?.slice(0, 5) || '60 min'})`
+    : 'Not scheduled'
+
+  return `<!doctype html>
+<html><head><meta charset="utf-8"><title>${escapeHtml(request.title)}</title>
+<style>
+body{font-family:Arial,sans-serif;color:#243247;line-height:1.5;margin:32px}
+h1{color:#1f3a5b;margin-bottom:4px}h2{font-size:16px;margin:24px 0 8px}
+.meta{color:#65758b;margin:0 0 20px}.details{width:100%;border-collapse:collapse}
+.details th,.details td{padding:8px;border:1px solid #dce3eb;text-align:left;vertical-align:top}
+.details th{width:160px;color:#506178}.agenda-item{padding:10px 0;border-bottom:1px solid #dce3eb}
+.agenda-item small{display:block;color:#64748b} @media print{body{margin:16mm}}
+</style></head><body>
+<h1>${escapeHtml(request.title)}</h1>
+<p class="meta">${escapeHtml(request.type === 'MEETING' ? 'Meeting request' : 'Document request')} · ${escapeHtml(request.status)}</p>
+<table class="details"><tbody>
+<tr><th>Submitted by</th><td>${escapeHtml(request.submittedBy || 'Not specified')}</td></tr>
+<tr><th>Department</th><td>${escapeHtml(request.department || 'Not specified')}</td></tr>
+<tr><th>Topic</th><td>${escapeHtml(request.topic || 'Not specified')}</td></tr>
+<tr><th>Meeting date</th><td>${escapeHtml(request.meetingDate ? formatDate(request.meetingDate) : 'Not scheduled')}</td></tr>
+<tr><th>Meeting time</th><td>${escapeHtml(meetingTime)}</td></tr>
+<tr><th>Submitted</th><td>${escapeHtml(request.createdAt ? formatDate(request.createdAt) : 'Not recorded')}</td></tr>
+</tbody></table>
+<section><h2>Details</h2><p>${escapeHtml(request.description || 'No additional details.')}</p></section>
+${agendaItems.length ? `<section><h2>${escapeHtml(agenda.title || 'Meeting agenda')}</h2>${agendaItems.map((item) => `<div class="agenda-item"><strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(item.durationMinutes)} min${item.details ? ` · ${escapeHtml(item.details)}` : ''}</small></div>`).join('')}</section>` : ''}
+${listSection('Objectives', agenda.objectives)}
+${listSection('Expected outcomes', agenda.outcomes)}
+</body></html>`
+}
+
+function getRequestExportFileName(title) {
+  const fileName = String(title || 'meeting-request')
+    .replace(/[<>:"/\\|?*]/g, '-')
+    .split('')
+    .filter((character) => character.charCodeAt(0) >= 32)
+    .join('')
+    .trim()
+    .replace(/\s+/g, '-')
+    .slice(0, 80)
+  return fileName || 'meeting-request'
+}
+
+function openRequestPdf(request) {
+  const printWindow = window.open('', '_blank')
+  if (!printWindow) {
+    throw new Error('Allow pop-ups in your browser to export requests as PDF.')
+  }
+
+  printWindow.document.open()
+  printWindow.document.write(getRequestExportHtml(request))
+  printWindow.document.close()
+  window.setTimeout(() => {
+    if (!printWindow.closed) {
+      printWindow.focus()
+      printWindow.print()
+    }
+  }, 250)
+}
+
+function downloadRequestWordDocument(request) {
+  const blob = new Blob(['\ufeff', getRequestExportHtml(request)], {
+    type: 'application/msword;charset=utf-8',
+  })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `${getRequestExportFileName(request.title)}.doc`
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
 function IntegrationPlaceholder({ icon, title, description, action, actionLabel }) {

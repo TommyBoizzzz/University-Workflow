@@ -2,6 +2,7 @@ import express from "express";
 import {
   createAgenda,
   createRequest,
+  deleteRequest,
   listRequests,
   reviewRequest
 } from "../controllers/requestController.js";
@@ -16,6 +17,7 @@ router.use(authenticate);
 router.get("/", authorizePermission("requests", "read"), listRequests);
 router.post("/agenda", authorizePermission("requests", "create"), createAgenda);
 router.post("/", authorizePermission("requests", "create"), createRequest);
+router.delete("/:id", authorizePermission("requests", "read"), deleteRequest);
 router.patch(
   "/:id/status",
   authorizePermission("requests", "update"),

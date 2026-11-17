@@ -192,6 +192,91 @@ export const createRequest = async (req, res) => {
   }
 };
 
+export const deleteRequest = async (req, res) => {
+  const requestId = Number(req.params.id);
+  if (!Number.isSafeInteger(requestId) || requestId < 1) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid request ID"
+    });
+  }
+
+  let client;
+  let transactionStarted = false;
+  try {
+    client = await pool.connect();
+    await client.query("BEGIN");
+    transactionStarted = true;
+
+    const result = await client.query(
+      `SELECT id, teacher_id AS "teacherId", status
+       FROM requests
+       WHERE id = $1
+       FOR UPDATE`,
+      [requestId]
+    );
+    if (result.rowCount === 0) {
+      await client.query("ROLLBACK");
+      transactionStarted = false;
+      return res.status(404).json({
+        success: false,
+        message: "Request not found"
+      });
+    }
+
+    const request = result.rows[0];
+    if (Number(request.teacherId) !== Number(req.user.id) && req.user.role !== "SUPERADMIN") {
+      await client.query("ROLLBACK");
+      transactionStarted = false;
+      return res.status(403).json({
+        success: false,
+        message: "Only the request owner or a superadmin can delete this request"
+      });
+    }
+    if (request.status !== "PENDING") {
+      await client.query("ROLLBACK");
+      transactionStarted = false;
+      return res.status(409).json({
+        success: false,
+        message: "Only pending requests can be deleted"
+      });
+    }
+
+    await client.query(
+      `DELETE FROM calendar_events
+       WHERE meeting_id IN (SELECT id FROM meetings WHERE request_id = $1)`,
+      [requestId]
+    );
+    await client.query("DELETE FROM documents WHERE request_id = $1", [requestId]);
+    await client.query("DELETE FROM approvals WHERE request_id = $1", [requestId]);
+    await client.query("DELETE FROM agendas WHERE request_id = $1", [requestId]);
+    await client.query("DELETE FROM meetings WHERE request_id = $1", [requestId]);
+    await client.query("DELETE FROM requests WHERE id = $1", [requestId]);
+    await client.query("COMMIT");
+    transactionStarted = false;
+
+    return res.json({
+      success: true,
+      message: "Request deleted"
+    });
+  } catch (error) {
+    if (transactionStarted) {
+      try {
+        await client.query("ROLLBACK");
+      } catch (rollbackError) {
+        console.error("Delete request rollback error:", rollbackError);
+      }
+    }
+    console.error("Delete request error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Unable to delete request"
+    });
+  } finally {
+    if (client) client.release();
+  }
+};
+
 export const createAgenda = async (req, res) => {
   const { title, topic = "", description = "" } = req.body ?? {};
   if (typeof title !== "string" || !title.trim() || title.trim().length > 255) {

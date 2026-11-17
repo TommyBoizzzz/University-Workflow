@@ -12,6 +12,12 @@ export async function createRequest(requestData) {
   })
 }
 
+export async function deleteRequest(requestId) {
+  return apiRequest(`/api/requests/${requestId}`, {
+    method: 'DELETE',
+  })
+}
+
 export async function generateAgenda(meetingDetails) {
   return apiRequest('/api/requests/agenda', {
     method: 'POST',
