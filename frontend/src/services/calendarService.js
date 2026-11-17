@@ -14,9 +14,3 @@ export async function getScheduleRecommendations(details) {
 export async function getCalendarEvents(from, to) {
   return apiRequest(`/api/calendar/events?${new URLSearchParams({ from, to })}`);
 }
-
-export async function syncCalendarMeeting(meetingId) {
-  return apiRequest(`/api/calendar/meetings/${meetingId}/sync`, {
-    method: "POST"
-  });
-}

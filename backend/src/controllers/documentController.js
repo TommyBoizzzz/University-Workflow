@@ -19,6 +19,26 @@ const isSupportedDocument = (file) => {
   return false;
 };
 
+const getGeminiErrorMessage = (error) => {
+  const status = Number(error.status);
+  if (status === 400) {
+    return "Gemini rejected the document request. Check the document format and Gemini model configuration.";
+  }
+  if (status === 401 || status === 403) {
+    return "Gemini rejected the API credentials or access. Check GEMINI_API_KEY and its API restrictions.";
+  }
+  if (status === 404) {
+    return "The configured Gemini model was not found. Check GEMINI_MODEL.";
+  }
+  if (status === 429) {
+    return "Gemini quota or rate limit exceeded. Check your Gemini API quota and try again later.";
+  }
+  if (status >= 500) {
+    return "Gemini is temporarily unavailable. Try again later.";
+  }
+  return "Unable to create the document brief. Check Gemini configuration and backend logs.";
+};
+
 export const createDocumentBrief = async (req, res) => {
   const file = req.file;
   if (!file) {
@@ -42,12 +62,31 @@ export const createDocumentBrief = async (req, res) => {
   }
 
   const sourceFilename = sanitizeFilename(file.originalname);
+  let brief;
   try {
-    const brief = await generateDocumentBrief({
+    brief = await generateDocumentBrief({
       ...file,
       originalname: sourceFilename,
       topic: req.body.topic?.trim() || ""
     });
+  } catch (error) {
+    if (error.statusCode === 503) {
+      return res.status(503).json({ success: false, message: error.message });
+    }
+    if (error.message === "No readable text was found in the Word document.") {
+      return res.status(400).json({ success: false, message: error.message });
+    }
+    if (error.message === "The document is too long to summarize.") {
+      return res.status(413).json({ success: false, message: error.message });
+    }
+    console.error("Generate document brief error:", error);
+    return res.status(502).json({
+      success: false,
+      message: getGeminiErrorMessage(error)
+    });
+  }
+
+  try {
     const documentResult = await pool.query(
       `INSERT INTO documents (created_by, document_title, source_filename, generated_brief)
        VALUES ($1, $2, $3, $4)
@@ -67,19 +106,10 @@ export const createDocumentBrief = async (req, res) => {
       }
     });
   } catch (error) {
-    if (error.statusCode === 503) {
-      return res.status(503).json({ success: false, message: error.message });
-    }
-    if (error.message === "No readable text was found in the Word document.") {
-      return res.status(400).json({ success: false, message: error.message });
-    }
-    if (error.message === "The document is too long to summarize.") {
-      return res.status(413).json({ success: false, message: error.message });
-    }
-    console.error("Generate document brief error:", error);
-    return res.status(502).json({
+    console.error("Save document brief error:", error);
+    return res.status(500).json({
       success: false,
-      message: "Unable to create the document brief. Check Gemini configuration and try again."
+      message: "The brief was generated, but could not be saved."
     });
   }
 };

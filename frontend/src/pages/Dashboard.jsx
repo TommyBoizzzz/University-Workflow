@@ -64,7 +64,6 @@ function Dashboard({ user, onUserUpdate, onSignOut }) {
   const canReadDocuments = hasPermission('documents', 'read', true)
   const canReadCalendar = hasPermission('calendar', 'read', true)
   const canCreateBrief = hasPermission('documents', 'create')
-  const canSyncMeetings = hasPermission('calendar', 'create', ['MANAGER', 'ADMIN', 'SUPERADMIN'].includes(user.role))
   const canManageUsers = hasPermission('users', 'read', ['ADMIN', 'SUPERADMIN'].includes(user.role))
 
   useEffect(() => {
@@ -456,7 +455,6 @@ function Dashboard({ user, onUserUpdate, onSignOut }) {
           {activePage === 'calendar' && canReadCalendar && (
             <Calendar
               canCreateMeeting={canCreateRequest}
-              canSyncMeetings={canSyncMeetings}
               onRequestMeeting={openNewMeetingRequest}
             />
           )}

@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   getAvailability,
-  getCalendarEvents,
-  syncCalendarMeeting
+  getCalendarEvents
 } from "../services/calendarService.js";
 
 const today = () => {
@@ -29,16 +28,13 @@ const formatSelectedDate = (date) => (
   }).format(new Date(`${date}T12:00:00`))
 );
 
-function Calendar({ canCreateMeeting, canSyncMeetings, onRequestMeeting }) {
+function Calendar({ canCreateMeeting, onRequestMeeting }) {
   const [date, setDate] = useState(today);
   const [events, setEvents] = useState([]);
   const [slots, setSlots] = useState([]);
   const [timeZone, setTimeZone] = useState("Asia/Phnom_Penh");
-  const [googleCalendarConfigured, setGoogleCalendarConfigured] = useState(false);
-  const [warning, setWarning] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
-  const [syncingMeetingId, setSyncingMeetingId] = useState(null);
 
   const refresh = useCallback(async () => {
     setError("");
@@ -51,8 +47,6 @@ function Calendar({ canCreateMeeting, canSyncMeetings, onRequestMeeting }) {
       setEvents(calendar.events);
       setSlots(availability.slots);
       setTimeZone(calendar.timeZone);
-      setGoogleCalendarConfigured(calendar.googleCalendarConfigured);
-      setWarning(calendar.warning || availability.warning || "");
     } catch (loadError) {
       setError(loadError.message || "Unable to load the university schedule.");
     } finally {
@@ -71,8 +65,6 @@ function Calendar({ canCreateMeeting, canSyncMeetings, onRequestMeeting }) {
         setEvents(calendar.events);
         setSlots(availability.slots);
         setTimeZone(calendar.timeZone);
-        setGoogleCalendarConfigured(calendar.googleCalendarConfigured);
-        setWarning(calendar.warning || availability.warning || "");
       })
       .catch((loadError) => {
         if (active) setError(loadError.message || "Unable to load the university schedule.");
@@ -85,19 +77,6 @@ function Calendar({ canCreateMeeting, canSyncMeetings, onRequestMeeting }) {
       active = false;
     };
   }, [date]);
-
-  const handleSync = async (meetingId) => {
-    setError("");
-    setSyncingMeetingId(meetingId);
-    try {
-      await syncCalendarMeeting(meetingId);
-      await refresh();
-    } catch (syncError) {
-      setError(syncError.message || "Unable to sync this meeting.");
-    } finally {
-      setSyncingMeetingId(null);
-    }
-  };
 
   return (
     <div className="calendar-workspace">
@@ -116,7 +95,6 @@ function Calendar({ canCreateMeeting, canSyncMeetings, onRequestMeeting }) {
         </label>
       </section>
 
-      {warning && <div className="calendar-notice" role="status">{warning}</div>}
       {error && <div className="workspace-error calendar-error" role="alert">{error}</div>}
 
       <div className="calendar-columns">
@@ -141,19 +119,6 @@ function Calendar({ canCreateMeeting, canSyncMeetings, onRequestMeeting }) {
                     <strong>{event.title}</strong>
                     <span>{event.source}{event.submittedBy ? ` · ${event.submittedBy}` : ""}</span>
                   </div>
-                  {event.source === "University Workflow" &&
-                    canSyncMeetings &&
-                    event.googleSyncStatus !== "SYNCED" &&
-                    googleCalendarConfigured && (
-                      <button
-                        className="calendar-sync-button"
-                        type="button"
-                        onClick={() => handleSync(event.id)}
-                        disabled={syncingMeetingId === event.id}
-                      >
-                        {syncingMeetingId === event.id ? "Syncing..." : "Sync"}
-                      </button>
-                    )}
                 </article>
               ))}
             </div>

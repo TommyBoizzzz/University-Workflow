@@ -3473,24 +3473,6 @@ button {
   white-space: nowrap;
 }
 
-.calendar-sync-button {
-  min-height: 28px;
-  padding: 0 9px;
-  border: 1px solid #dce9e6;
-  border-radius: 7px;
-  color: #34766d;
-  background: #f5faf8;
-  font: inherit;
-  font-size: 9px;
-  font-weight: 650;
-  cursor: pointer;
-}
-
-.calendar-sync-button:disabled {
-  cursor: wait;
-  opacity: 0.55;
-}
-
 .calendar-slot {
   display: flex;
   align-items: center;

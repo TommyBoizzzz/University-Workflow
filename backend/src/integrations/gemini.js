@@ -46,14 +46,13 @@ const parseJsonResponse = (response) => {
 
 const generateJson = async (prompt, extraParts = []) => {
   const response = await getClient().models.generateContent({
-    model: process.env.GEMINI_MODEL || "gemini-2.5-flash",
+    model: process.env.GEMINI_MODEL || "gemini-3.5-flash-lite",
     contents: [{
       role: "user",
       parts: [{ text: prompt }, ...extraParts]
     }],
     config: {
-      responseMimeType: "application/json",
-      temperature: 0.2
+      responseMimeType: "application/json"
     }
   });
   return parseJsonResponse(response);
@@ -109,7 +108,7 @@ export async function generateScheduleRecommendations({
   availableSlots
 }) {
   const result = await generateJson(
-    `Recommend up to three suitable meeting start times for a university staff meeting. The times below have already been checked against the live university and Google calendars. Choose only from this exact list; never invent or alter a time. Rank the best fit first. Consider the meeting topic and details, but do not claim a time is available unless it is in the list. Return JSON with this shape: ${JSON.stringify(scheduleShape)}. Date: ${date}. Meeting: ${title}. Topic: ${topic || "Not specified"}. Details: ${description || "Not specified"}. Available start times: ${availableSlots.join(", ")}.`
+    `Recommend up to three suitable meeting start times for a university staff meeting. The times below have already been checked against meetings scheduled in this system. Choose only from this exact list; never invent or alter a time. Rank the best fit first. Consider the meeting topic and details, but do not claim a time is available unless it is in the list. Return JSON with this shape: ${JSON.stringify(scheduleShape)}. Date: ${date}. Meeting: ${title}. Topic: ${topic || "Not specified"}. Details: ${description || "Not specified"}. Available start times: ${availableSlots.join(", ")}.`
   );
   const available = new Set(availableSlots);
   const seen = new Set();

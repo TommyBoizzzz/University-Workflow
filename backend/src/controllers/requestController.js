@@ -1,15 +1,13 @@
 import pool from "../config/database.js";
 import { generateAgenda } from "../integrations/gemini.js";
 import {
-  getBusyRanges,
-  syncApprovedMeeting
+  getBusyRanges
 } from "../services/calendarService.js";
 import {
   isFutureMeetingStart,
   isValidTime,
   timeToMinutes
 } from "../utils/scheduling.js";
-import { isGoogleCalendarConfigured } from "../integrations/googleCalendar.js";
 
 const requestSelection = `
   SELECT
@@ -221,11 +219,24 @@ export const createAgenda = async (req, res) => {
     return res.json({ success: true, agenda });
   } catch (error) {
     console.error("Generate agenda error:", error);
+    const geminiStatus = Number(error.status);
+    let message = "Unable to generate an agenda. Check backend logs.";
+    if (error.statusCode === 503) {
+      message = error.message;
+    } else if (geminiStatus === 400) {
+      message = "Gemini rejected the agenda request. Check the model and request configuration.";
+    } else if (geminiStatus === 401 || geminiStatus === 403) {
+      message = "Gemini rejected the API credentials or access. Check GEMINI_API_KEY and its API restrictions.";
+    } else if (geminiStatus === 404) {
+      message = "The configured Gemini model was not found. Check GEMINI_MODEL.";
+    } else if (geminiStatus === 429) {
+      message = "Gemini quota or rate limit exceeded. Check your API quota and try again later.";
+    } else if (geminiStatus >= 500) {
+      message = "Gemini is temporarily unavailable. Try again later.";
+    }
     return res.status(error.statusCode || 502).json({
       success: false,
-      message: error.statusCode === 503
-        ? error.message
-        : "Unable to generate an agenda. Check the Gemini configuration and try again."
+      message
     });
   }
 };
@@ -294,7 +305,6 @@ export const reviewRequest = async (req, res) => {
     }
 
     const request = requestResult.rows[0];
-    let meeting = null;
     if (status === "APPROVED" && request.type === "MEETING") {
       const permissionResult = await client.query(
         `SELECT role_permissions.enabled
@@ -336,13 +346,9 @@ export const reviewRequest = async (req, res) => {
         transactionStarted = false;
         return res.status(409).json({
           success: false,
-          message: "The requested time now conflicts with another university or Google Calendar event. Reject the request and ask the teacher to choose another time."
+          message: "The requested time now conflicts with another meeting in this system. Reject the request and ask the teacher to choose another time."
         });
       }
-      meeting = {
-        id: request.meetingId,
-        date: meetingDate
-      };
     }
 
     await client.query(
@@ -357,44 +363,11 @@ export const reviewRequest = async (req, res) => {
     await client.query("COMMIT");
     transactionStarted = false;
 
-    let googleCalendarSynced = null;
-    let warning = null;
-    if (meeting && status === "APPROVED") {
-      if (!isGoogleCalendarConfigured()) {
-        googleCalendarSynced = false;
-        warning = "Meeting confirmed in the university schedule, but Google Calendar is not configured.";
-      } else {
-        try {
-          const syncResult = await syncApprovedMeeting(meeting.id);
-          googleCalendarSynced = syncResult.synced === true;
-          if (!googleCalendarSynced) {
-            warning = "Meeting confirmed in the university schedule, but Google Calendar is not configured.";
-          }
-        } catch (syncError) {
-          console.error("Google Calendar meeting sync error:", syncError);
-          googleCalendarSynced = false;
-          warning = "Meeting confirmed in the university schedule, but Google Calendar sync failed. A manager can retry from the calendar.";
-          try {
-            await pool.query(
-              `UPDATE meetings
-               SET google_sync_status = $1, google_sync_error = $2
-               WHERE id = $3`,
-              [syncError.statusCode === 409 ? "CONFLICT" : "FAILED", "Google Calendar sync failed", meeting.id]
-            );
-          } catch (syncStateError) {
-            console.error("Google Calendar sync state error:", syncStateError);
-          }
-        }
-      }
-    }
-
     return res.json({
       success: true,
       message: `Request ${status.toLowerCase()}`,
       requestId,
-      status,
-      googleCalendarSynced,
-      warning
+      status
     });
   } catch (error) {
     if (transactionStarted) {
