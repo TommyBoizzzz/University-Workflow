@@ -12,6 +12,8 @@ const config = {
   user: process.env.DB_USER || "postgres",
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME || "university_workflow",
+  ssl: process.env.DB_SSL === "true" ? { rejectUnauthorized: false } : undefined,
+  max: process.env.VERCEL === "1" ? 2 : 10,
 };
 
 export const createDatabase = async () => {
