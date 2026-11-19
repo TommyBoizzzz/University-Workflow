@@ -16,17 +16,21 @@ import Meeting from './Meeting.jsx'
 import UserManagement from './UserManagement.jsx'
 
 const navigation = [
-  { id: 'overview', label: 'Overview', icon: '◫' },
-  { id: 'requests', label: 'Requests', icon: '↗', permission: ['requests', 'read'] },
-  { id: 'fill-meeting', label: 'Meeting materials', icon: '▤', permission: ['requests', 'read'] },
-  { id: 'agenda', label: 'Agenda', icon: '≡', permission: ['requests', 'read'] },
-  { id: 'approvals', label: 'Approvals', icon: '✓', permission: ['approvals', 'read'] },
-  { id: 'documents', label: 'Documents', icon: '▤', permission: ['documents', 'read'] },
-  { id: 'calendar', label: 'Calendar', icon: '▦', permission: ['calendar', 'read'] },
-  { id: 'users', label: 'Users', icon: '♙', permission: ['users', 'read'] },
+  { id: 'overview', path: '/', label: 'Overview', icon: '◫' },
+  { id: 'requests', path: '/requests', label: 'Requests', icon: '↗', permission: ['requests', 'read'] },
+  { id: 'fill-meeting', path: '/meetings', label: 'Meeting materials', icon: '▤', permission: ['requests', 'read'] },
+  { id: 'agenda', path: '/agenda', label: 'Agenda', icon: '≡', permission: ['requests', 'read'] },
+  { id: 'approvals', path: '/approvals', label: 'Approvals', icon: '✓', permission: ['approvals', 'read'] },
+  { id: 'documents', path: '/documents', label: 'Documents', icon: '▤', permission: ['documents', 'read'] },
+  { id: 'calendar', path: '/calendar', label: 'Calendar', icon: '▦', permission: ['calendar', 'read'] },
+  { id: 'users', path: '/users', label: 'Users', icon: '♙', permission: ['users', 'read'] },
 ]
 
 const initialForm = { title: '', topic: '', description: '', meetingDate: '', meetingStart: '', agenda: null }
+
+function getPageFromPathname(pathname) {
+  return navigation.find((item) => item.path === pathname)?.id || 'overview'
+}
 
 function getTodayDate() {
   const date = new Date()
@@ -42,7 +46,7 @@ function formatDate(value) {
 }
 
 function Dashboard({ user, onUserUpdate, onSignOut }) {
-  const [activePage, setActivePage] = useState('overview')
+  const [activePage, setActivePage] = useState(() => getPageFromPathname(window.location.pathname))
   const [requests, setRequests] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
@@ -102,6 +106,12 @@ function Dashboard({ user, onUserUpdate, onSignOut }) {
       document.removeEventListener('visibilitychange', refreshUserPermissions)
     }
   }, [onUserUpdate])
+
+  useEffect(() => {
+    const handlePopState = () => setActivePage(getPageFromPathname(window.location.pathname))
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [])
 
   const loadRequests = useCallback(async () => {
     setError('')
@@ -372,6 +382,10 @@ function Dashboard({ user, onUserUpdate, onSignOut }) {
 
   const handleNavigate = (page) => {
     setActivePage(page)
+    const route = navigation.find((item) => item.id === page)
+    if (route && window.location.pathname !== route.path) {
+      window.history.pushState({}, '', route.path)
+    }
   }
 
   const openNewMeetingRequest = (slot = null) => {
@@ -609,6 +623,11 @@ function Dashboard({ user, onUserUpdate, onSignOut }) {
             <Meeting
               requests={requests}
               isLoading={isLoading}
+              onDelete={handleDeleteRequest}
+              onExport={handleExportRequest}
+              workingRequestId={workingRequestId}
+              userId={user.id}
+              isSuperAdmin={user.role === 'SUPERADMIN'}
             />
           )}
 
@@ -1173,25 +1192,54 @@ function escapeHtml(value) {
 
 function getRequestExportHtml(request) {
   const agenda = request.agenda || {}
-  const listSection = (title, items) => (
-    Array.isArray(items) && items.length
-      ? `<section><h2>${escapeHtml(title)}</h2><ul>${items.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul></section>`
-      : ''
-  )
-  const agendaItems = Array.isArray(agenda.items) ? agenda.items : []
+  const brief = request.documentBrief || {}
+  const briefActions = Array.isArray(brief.actions)
+    ? brief.actions.map((action) => [
+      action.task,
+      action.owner ? `Owner: ${action.owner}` : '',
+      action.dueDate ? `Due: ${action.dueDate}` : ''
+    ].filter(Boolean).join(' · '))
+    : []
   const meetingTime = request.meetingStart
     ? `${request.meetingStart.slice(0, 5)} (${request.meetingEnd?.slice(0, 5) || '60 min'})`
     : 'Not scheduled'
+  const exportListSection = (title, items) => (
+    Array.isArray(items) && items.length
+      ? `<section class="subsection"><h3>${escapeHtml(title)}</h3><ul>${items.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul></section>`
+      : ''
+  )
+  const briefSection = [
+    brief.executiveSummary ? `<section class="subsection"><h3>Executive summary</h3><p>${escapeHtml(brief.executiveSummary)}</p></section>` : '',
+    exportListSection('Key points', brief.keyPoints),
+    exportListSection('Important dates', brief.dates),
+    exportListSection('Follow-up actions', briefActions),
+    exportListSection('Risks and open questions', brief.risks)
+  ].join('')
+  const agendaSection = [
+    exportListSection('Objectives', agenda.objectives),
+    Array.isArray(agenda.items) && agenda.items.length
+      ? `<section class="subsection"><h3>Agenda items</h3>${agenda.items.map((item, index) => `<div class="agenda-item"><span class="agenda-number">${index + 1}</span><div><strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(item.durationMinutes)} min${item.details ? ` · ${escapeHtml(item.details)}` : ''}</small></div></div>`).join('')}</section>`
+      : '',
+    exportListSection('Expected outcomes', agenda.outcomes)
+  ].join('')
 
   return `<!doctype html>
 <html><head><meta charset="utf-8"><title>${escapeHtml(request.title)}</title>
 <style>
-body{font-family:Arial,sans-serif;color:#243247;line-height:1.5;margin:32px}
-h1{color:#1f3a5b;margin-bottom:4px}h2{font-size:16px;margin:24px 0 8px}
-.meta{color:#65758b;margin:0 0 20px}.details{width:100%;border-collapse:collapse}
-.details th,.details td{padding:8px;border:1px solid #dce3eb;text-align:left;vertical-align:top}
-.details th{width:160px;color:#506178}.agenda-item{padding:10px 0;border-bottom:1px solid #dce3eb}
-.agenda-item small{display:block;color:#64748b} @media print{body{margin:16mm}}
+body{font-family:Arial,sans-serif;color:#243247;line-height:1.35;margin:20px}
+h1{color:#1f3a5b;margin-bottom:2px}h2{font-size:17px;margin:0}
+.meta{color:#65758b;margin:0 0 10px}.details{width:100%;border-collapse:collapse}
+.details th,.details td{padding:5px 7px;border:1px solid #dce3eb;text-align:left;vertical-align:top}
+.details th{width:160px;color:#506178}.export-section{margin-top:8px;border:1px solid #cdded8;border-radius:8px;overflow:hidden;box-shadow:0 3px 10px rgba(47,91,82,0.07)}
+.export-section-header{padding:7px 12px;border-bottom:1px solid #dce3eb;background:linear-gradient(110deg,#dcefe8,#edf5f1 70%,#dfe8f7)}
+.export-section-header.agenda-header{border-bottom-color:#e8dcb8;background:linear-gradient(110deg,#f7edcf,#fff8e7 70%,#efe4c6)}
+.export-section-header span{display:block;color:#71817f;font-size:10px;font-weight:bold;letter-spacing:1px}
+.export-section-header h2{color:#304956}.export-section-header.agenda-header h2{color:#80632f}
+.export-section-body{padding:2px 12px 8px}.subsection{margin-top:6px;padding:5px 7px;border:1px solid #edf2ef;border-radius:6px;background:#fbfdfc}.subsection h3{margin:0 0 3px;font-size:13px;color:#4d7c70}
+.agenda-header + .export-section-body .subsection{border-color:#f1ead7;background:#fffdf7}.agenda-header + .export-section-body .subsection h3{color:#9a7437}
+.subsection p,.subsection li{font-size:11px}.subsection ul{margin:2px 0}.agenda-item{display:flex;gap:7px;padding:4px 0;border-bottom:1px solid #edf1f0}
+.agenda-number{display:grid;place-items:center;flex:0 0 28px;width:28px;height:28px;border-radius:50%;background:#eee9d7;color:#76622e;font-weight:bold}
+.agenda-item strong{display:block}.agenda-item small{display:block;color:#64748b}@media print{body{margin:16mm}.export-section{break-inside:avoid}}
 </style></head><body>
 <h1>${escapeHtml(request.title)}</h1>
 <p class="meta">${escapeHtml(request.type === 'MEETING' ? 'Meeting request' : 'Document request')} · ${escapeHtml(request.status)}</p>
@@ -1204,9 +1252,12 @@ h1{color:#1f3a5b;margin-bottom:4px}h2{font-size:16px;margin:24px 0 8px}
 <tr><th>Submitted</th><td>${escapeHtml(request.createdAt ? formatDate(request.createdAt) : 'Not recorded')}</td></tr>
 </tbody></table>
 <section><h2>Details</h2><p>${escapeHtml(request.description || 'No additional details.')}</p></section>
-${agendaItems.length ? `<section><h2>${escapeHtml(agenda.title || 'Meeting agenda')}</h2>${agendaItems.map((item) => `<div class="agenda-item"><strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(item.durationMinutes)} min${item.details ? ` · ${escapeHtml(item.details)}` : ''}</small></div>`).join('')}</section>` : ''}
-${listSection('Objectives', agenda.objectives)}
-${listSection('Expected outcomes', agenda.outcomes)}
+${brief.executiveSummary || brief.keyPoints?.length || brief.dates?.length || briefActions.length || brief.risks?.length
+  ? `<section class="export-section"><header class="export-section-header"><span>SECTION 1</span><h2>Document Brief</h2></header><div class="export-section-body">${briefSection}</div></section>`
+  : ''}
+${agendaSection
+  ? `<section class="export-section"><header class="export-section-header agenda-header"><span>SECTION 2</span><h2>${escapeHtml(agenda.title || 'Meeting Agenda')}</h2></header><div class="export-section-body">${agendaSection}</div></section>`
+  : ''}
 </body></html>`
 }
 

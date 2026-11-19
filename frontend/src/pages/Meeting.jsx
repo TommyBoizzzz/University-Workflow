@@ -9,7 +9,15 @@ function formatMeetingDate(value) {
   }).format(new Date(`${String(value).slice(0, 10)}T12:00:00`));
 }
 
-function Meeting({ requests, isLoading }) {
+function Meeting({
+  requests,
+  isLoading,
+  onDelete,
+  onExport,
+  workingRequestId,
+  userId,
+  isSuperAdmin
+}) {
   const [selectedRequestId, setSelectedRequestId] = useState(null);
   const meetings = requests.filter((request) => (
     request.type === "MEETING" &&
@@ -26,7 +34,10 @@ function Meeting({ requests, isLoading }) {
           <h2>Documents and agendas for your meetings.</h2>
           <p>Select a meeting to view only its linked document brief and generated agenda.</p>
         </div>
-        <span className="documents-ai-mark" aria-hidden="true">▤</span>
+        <div className="meeting-intro-summary">
+          <span className="documents-ai-mark" aria-hidden="true">▤</span>
+          <span><strong>{meetings.length}</strong><small>{meetings.length === 1 ? "meeting" : "meetings"}</small></span>
+        </div>
       </section>
 
       {isLoading ? (
@@ -38,34 +49,65 @@ function Meeting({ requests, isLoading }) {
           <p>Meetings with a linked document brief and agenda will appear here after submission.</p>
         </div>
       ) : (
-        <div className="documents-columns">
-          <section className="documents-panel saved-briefs-panel">
+        <div className="documents-columns meeting-materials-columns">
+          <section className="documents-panel saved-briefs-panel meeting-list-panel">
             <div className="documents-panel-heading saved-briefs-heading">
               <div>
                 <p className="documents-kicker">MEETINGS</p>
-                <h3>Document and agenda</h3>
+                <h3>Your meetings</h3>
               </div>
+              <span className="meeting-list-count">{meetings.length}</span>
             </div>
             <div className="document-brief-list">
-              {meetings.map((meeting) => (
-                <button
-                  className={`document-brief-choice ${selectedMeeting?.id === meeting.id ? "active" : ""}`}
-                  key={meeting.id}
-                  type="button"
-                  aria-pressed={selectedMeeting?.id === meeting.id}
-                  onClick={() => setSelectedRequestId(meeting.id)}
-                >
-                  <span className="document-brief-icon" aria-hidden="true">▤</span>
-                  <span>
-                    <strong>{meeting.title}</strong>
-                    <small>{formatMeetingDate(meeting.meetingDate)} · {meeting.status}</small>
-                  </span>
-                </button>
-              ))}
+              {meetings.map((meeting) => {
+                const isWorking = workingRequestId === meeting.id;
+                const canDelete = meeting.status === "PENDING"
+                  && (isSuperAdmin || String(meeting.teacherId) === String(userId));
+
+                return (
+                  <div
+                    className={`meeting-material-row ${selectedMeeting?.id === meeting.id ? "active" : ""}`}
+                    key={meeting.id}
+                  >
+                    <button
+                      className="meeting-material-select"
+                      type="button"
+                      aria-pressed={selectedMeeting?.id === meeting.id}
+                      onClick={() => setSelectedRequestId(meeting.id)}
+                    >
+                      <span className="document-brief-icon" aria-hidden="true">▤</span>
+                      <span>
+                        <strong>{meeting.title}</strong>
+                        <small>{formatMeetingDate(meeting.meetingDate)} · {meeting.status}</small>
+                      </span>
+                    </button>
+                    <div className="meeting-material-actions">
+                      <button
+                        className="meeting-material-action export"
+                        type="button"
+                        onClick={() => onExport(meeting, "pdf")}
+                        disabled={isWorking}
+                      >
+                        Export
+                      </button>
+                      {canDelete && (
+                        <button
+                          className="meeting-material-action delete"
+                          type="button"
+                          onClick={() => onDelete(meeting)}
+                          disabled={isWorking}
+                        >
+                          Delete
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </section>
 
-          <article className="document-brief-result">
+          <article className="document-brief-result meeting-detail-panel">
             <div className="document-result-heading">
               <div>
                 <p className="documents-kicker">MEETING</p>
@@ -78,16 +120,50 @@ function Meeting({ requests, isLoading }) {
                   {selectedMeeting.sourceFilename ? ` · ${selectedMeeting.sourceFilename}` : ""}
                 </span>
               </div>
-              <span className={`status-badge status-${selectedMeeting.status?.toLowerCase()}`}>
-                {selectedMeeting.status}
-              </span>
+              <div className="meeting-result-actions">
+                <span className={`status-badge status-${selectedMeeting.status?.toLowerCase()}`}>
+                  {selectedMeeting.status}
+                </span>
+                <button
+                  className="meeting-material-action export"
+                  type="button"
+                  onClick={() => onExport(selectedMeeting, "pdf")}
+                  disabled={workingRequestId === selectedMeeting.id}
+                >
+                  <span className="meeting-export-icon" aria-hidden="true">↓</span>
+                  Export PDF
+                </button>
+                {selectedMeeting.status === "PENDING"
+                  && (isSuperAdmin || String(selectedMeeting.teacherId) === String(userId)) && (
+                    <button
+                      className="meeting-material-action delete"
+                      type="button"
+                      onClick={() => onDelete(selectedMeeting)}
+                      disabled={workingRequestId === selectedMeeting.id}
+                    >
+                      Delete
+                    </button>
+                  )}
+              </div>
             </div>
-            <section>
-              <h4>Document brief</h4>
+            <section className="meeting-document-section brief-section">
+              <div className="meeting-section-heading">
+                <span className="meeting-section-icon" aria-hidden="true">▤</span>
+                <div>
+                  <p>SECTION 1</p>
+                  <h4>Document Brief</h4>
+                </div>
+              </div>
               <DocumentBriefDetails brief={selectedMeeting.documentBrief} />
             </section>
-            <section>
-              <h4>Agenda</h4>
+            <section className="meeting-document-section agenda-section">
+              <div className="meeting-section-heading">
+                <span className="meeting-section-icon" aria-hidden="true">≡</span>
+                <div>
+                  <p>SECTION 2</p>
+                  <h4>Meeting Agenda</h4>
+                </div>
+              </div>
               <AgendaDetails agenda={selectedMeeting.agenda} />
             </section>
           </article>
