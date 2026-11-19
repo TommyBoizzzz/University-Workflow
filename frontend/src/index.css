@@ -3447,6 +3447,12 @@ button {
   gap: 4px;
 }
 
+.meeting-process-export-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .meeting-process-export strong {
   color: #46577c;
   font-size: 10px;
@@ -3597,6 +3603,19 @@ button {
   display: grid;
 }
 
+.fill-meeting-form {
+  display: grid;
+  gap: 15px;
+}
+
+.fill-meeting-fields {
+  gap: 8px;
+}
+
+.fill-meeting-fields label:first-child {
+  margin-top: 0;
+}
+
 .meeting-slot-fields label:first-child {
   margin-top: 16px;
 }
@@ -3616,6 +3635,25 @@ button {
 
 .meeting-slot-fields input:focus,
 .meeting-slot-fields select:focus {
+  border-color: #8392e9;
+  box-shadow: 0 0 0 3px rgba(111, 130, 222, 0.11);
+}
+
+.fill-meeting-fields textarea {
+  width: 100%;
+  min-height: 84px;
+  padding: 9px 11px;
+  border: 1px solid #e1e5ed;
+  border-radius: 8px;
+  outline: 0;
+  color: #37445a;
+  background: #fff;
+  font: inherit;
+  font-size: 12px;
+  resize: vertical;
+}
+
+.fill-meeting-fields textarea:focus {
   border-color: #8392e9;
   box-shadow: 0 0 0 3px rgba(111, 130, 222, 0.11);
 }
@@ -4362,6 +4400,7 @@ button {
 }
 
 .document-brief-bullets,
+.agenda-page-items,
 .brief-action-list {
   display: grid;
   gap: 8px;
@@ -4369,6 +4408,32 @@ button {
   padding-left: 18px;
   color: #6a7c7e;
   font-size: 11px;
+  line-height: 1.6;
+}
+
+.agenda-page-items li {
+  padding-left: 2px;
+}
+
+.agenda-page-items li strong,
+.agenda-page-items li span {
+  display: block;
+}
+
+.agenda-page-items li strong {
+  color: #526b70;
+  font-size: 11px;
+}
+
+.agenda-page-items li span {
+  color: #91a09f;
+  font-size: 10px;
+}
+
+.agenda-page-items li p {
+  margin: 3px 0 0;
+  color: #687b7e;
+  font-size: 10px;
   line-height: 1.6;
 }
 

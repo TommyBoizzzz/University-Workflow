@@ -96,7 +96,7 @@ function Calendar({ canCreateMeeting, onRequestMeeting }) {
         <div>
           <p className="calendar-kicker">UNIVERSITY SCHEDULE</p>
           <h2>Plan a meeting with confidence.</h2>
-          <p>See confirmed university meetings and request an open 60-minute weekday slot.</p>
+          <p>See approved meetings and pending requests, then request an open 60-minute weekday slot.</p>
         </div>
         <div className="calendar-date-controls">
           <button
@@ -135,13 +135,13 @@ function Calendar({ canCreateMeeting, onRequestMeeting }) {
       <div className="calendar-columns">
         <section className="calendar-panel">
           <div className="calendar-panel-heading">
-            <div><p className="calendar-kicker">CONFIRMED EVENTS</p><h3>{formatSelectedDate(date)}</h3></div>
+            <div><p className="calendar-kicker">MEETINGS &amp; PENDING REQUESTS</p><h3>{formatSelectedDate(date)}</h3></div>
             <button className="access-icon-button" type="button" onClick={refresh} disabled={isLoading} aria-label="Refresh schedule">↻</button>
           </div>
           {isLoading ? (
             <div className="access-loading"><span className="small-spinner" /> Loading schedule...</div>
           ) : events.length === 0 ? (
-            <div className="calendar-empty"><span aria-hidden="true">▦</span><strong>No confirmed meetings</strong><p>Open times are listed alongside the schedule.</p></div>
+            <div className="calendar-empty"><span aria-hidden="true">▦</span><strong>No meetings or pending requests</strong><p>Open times are listed alongside the schedule.</p></div>
           ) : (
             <div className="calendar-event-list">
               {events.map((event) => (
@@ -152,7 +152,7 @@ function Calendar({ canCreateMeeting, onRequestMeeting }) {
                   </div>
                   <div className="calendar-event-copy">
                     <strong>{event.title}</strong>
-                    <span>{event.source}{event.submittedBy ? ` · ${event.submittedBy}` : ""}</span>
+                    <span>{event.status === "PENDING" ? "Pending request" : event.source}{event.submittedBy ? ` · ${event.submittedBy}` : ""}</span>
                   </div>
                 </article>
               ))}

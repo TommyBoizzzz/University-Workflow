@@ -36,7 +36,7 @@ export async function getCalendarEvents(from, to) {
      JOIN requests ON requests.id = meetings.request_id
      JOIN users ON users.id = requests.teacher_id
      WHERE meetings.meeting_date BETWEEN $1 AND $2
-       AND requests.status = 'APPROVED'
+       AND requests.status IN ('PENDING', 'APPROVED')
      ORDER BY meetings.meeting_date, meetings.start_time`,
     [from, to]
   );

@@ -9,13 +9,17 @@ import {
 import { getCurrentUser } from '../services/authService.js'
 import { getAvailability, getScheduleRecommendations } from '../services/calendarService.js'
 import { createDocumentBrief } from '../services/documentService.js'
+import Agenda from './Agenda.jsx'
 import Calendar from './Calendar.jsx'
 import Documents from './Documents.jsx'
+import Meeting from './Meeting.jsx'
 import UserManagement from './UserManagement.jsx'
 
 const navigation = [
   { id: 'overview', label: 'Overview', icon: '◫' },
   { id: 'requests', label: 'Requests', icon: '↗', permission: ['requests', 'read'] },
+  { id: 'fill-meeting', label: 'Meeting materials', icon: '▤', permission: ['requests', 'read'] },
+  { id: 'agenda', label: 'Agenda', icon: '≡', permission: ['requests', 'read'] },
   { id: 'approvals', label: 'Approvals', icon: '✓', permission: ['approvals', 'read'] },
   { id: 'documents', label: 'Documents', icon: '▤', permission: ['documents', 'read'] },
   { id: 'calendar', label: 'Calendar', icon: '▦', permission: ['calendar', 'read'] },
@@ -44,12 +48,14 @@ function Dashboard({ user, onUserUpdate, onSignOut }) {
   const [error, setError] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
   const [completedFlowReport, setCompletedFlowReport] = useState(null)
+  const [flowExportReport, setFlowExportReport] = useState(null)
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [form, setForm] = useState(initialForm)
   const [requestMethod, setRequestMethod] = useState('form')
   const [documentFile, setDocumentFile] = useState(null)
   const [documentFocus, setDocumentFocus] = useState('')
   const [documentBrief, setDocumentBrief] = useState(null)
+  const [documentId, setDocumentId] = useState(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isDocumentAnalyzing, setIsDocumentAnalyzing] = useState(false)
   const [availableSlots, setAvailableSlots] = useState([])
@@ -164,6 +170,20 @@ function Dashboard({ user, onUserUpdate, onSignOut }) {
     [requests],
   )
   const recentRequests = requests.slice(0, 5)
+  const draftFlowReport = documentBrief && form.agenda
+    ? {
+        request: {
+          title: form.title || documentBrief.title,
+          topic: form.topic,
+          meetingDate: form.meetingDate,
+          meetingStart: form.meetingStart,
+        },
+        fileName: documentFile?.name || 'Uploaded document',
+        brief: documentBrief,
+        agenda: form.agenda,
+        submitted: false,
+      }
+    : null
   const visibleNavigation = navigation.filter(
     (item) => (item.id !== 'approvals' || canReadRequests)
       && (!item.permission || hasPermission(
@@ -191,6 +211,7 @@ function Dashboard({ user, onUserUpdate, onSignOut }) {
         meetingDate: form.meetingDate,
         meetingStart: form.meetingStart,
         ...(form.agenda ? { agenda: form.agenda } : {}),
+        ...(requestMethod === 'document' && documentId ? { documentId } : {}),
       })
       if (requestMethod === 'document' && documentBrief && form.agenda) {
         setCompletedFlowReport({
@@ -198,6 +219,7 @@ function Dashboard({ user, onUserUpdate, onSignOut }) {
           fileName: documentFile?.name || 'Uploaded document',
           brief: documentBrief,
           agenda: form.agenda,
+          submitted: true,
         })
       }
       setForm(initialForm)
@@ -233,6 +255,11 @@ function Dashboard({ user, onUserUpdate, onSignOut }) {
     }
   }
 
+  const exportCompletedFlow = (type, report) => {
+    setFlowExportReport({ ...report, exportType: type })
+    window.setTimeout(() => window.print(), 0)
+  }
+
   const handleReadDocument = async () => {
     setError('')
     if (!documentFile) {
@@ -253,6 +280,7 @@ function Dashboard({ user, onUserUpdate, onSignOut }) {
         brief.risks?.length ? `Risks and open questions: ${brief.risks.join('; ')}` : '',
       ].filter(Boolean).join('\n').slice(0, 10000)
       setDocumentBrief(brief)
+      setDocumentId(result.document.id)
       setForm((previous) => ({
         ...previous,
         title: brief.title,
@@ -356,6 +384,7 @@ function Dashboard({ user, onUserUpdate, onSignOut }) {
     setDocumentFile(null)
     setDocumentFocus('')
     setDocumentBrief(null)
+    setDocumentId(null)
     setIsAvailabilityLoading(true)
     setScheduleRecommendations([])
     setError('')
@@ -365,6 +394,8 @@ function Dashboard({ user, onUserUpdate, onSignOut }) {
   const pageTitle = {
     overview: 'Overview',
     requests: isTeacher ? 'My requests' : 'All requests',
+    'fill-meeting': 'Meeting materials',
+    agenda: 'Agendas',
     approvals: 'Approval queue',
     documents: 'Documents',
     calendar: 'Calendar',
@@ -456,12 +487,20 @@ function Dashboard({ user, onUserUpdate, onSignOut }) {
           {completedFlowReport && (
             <section className="meeting-process-export completed-flow-export" aria-label="Export submitted meeting process">
               <div>
-                <strong>Export your completed meeting process</strong>
+                <strong>Choose what to export</strong>
                 <span>Request #{completedFlowReport.request.id} · {completedFlowReport.request.status}</span>
               </div>
-              <button className="secondary-action" type="button" onClick={() => window.print()}>
-                Export process as PDF
-              </button>
+              <div className="meeting-process-export-actions">
+                <button className="secondary-action" type="button" onClick={() => exportCompletedFlow('agenda', completedFlowReport)}>
+                  Export agenda PDF
+                </button>
+                <button className="secondary-action" type="button" onClick={() => exportCompletedFlow('document', completedFlowReport)}>
+                  Export document PDF
+                </button>
+                <button className="secondary-action" type="button" onClick={() => exportCompletedFlow('combined', completedFlowReport)}>
+                  Export agenda with document PDF
+                </button>
+              </div>
               <small>In the print dialog, choose “Save as PDF”.</small>
             </section>
           )}
@@ -566,6 +605,17 @@ function Dashboard({ user, onUserUpdate, onSignOut }) {
             <Documents canCreateBrief={canCreateBrief} />
           )}
 
+          {activePage === 'fill-meeting' && canReadRequests && (
+            <Meeting
+              requests={requests}
+              isLoading={isLoading}
+            />
+          )}
+
+          {activePage === 'agenda' && canReadRequests && (
+            <Agenda requests={requests} isLoading={isLoading} />
+          )}
+
           {activePage === 'calendar' && canReadCalendar && (
             <Calendar
               canCreateMeeting={canCreateRequest}
@@ -578,6 +628,8 @@ function Dashboard({ user, onUserUpdate, onSignOut }) {
           )}
 
           {((activePage === 'requests' && !canReadRequests)
+            || (activePage === 'fill-meeting' && !canReadRequests)
+            || (activePage === 'agenda' && !canReadRequests)
             || (activePage === 'approvals' && !canReadApprovals)
             || (activePage === 'documents' && !canReadDocuments)
             || (activePage === 'calendar' && !canReadCalendar)
@@ -651,6 +703,7 @@ function Dashboard({ user, onUserUpdate, onSignOut }) {
                         const selectedFile = event.target.files?.[0] || null
                         setDocumentFile(selectedFile)
                         setDocumentBrief(null)
+                        setDocumentId(null)
                         setForm((previous) => ({ ...previous, title: '', topic: '', description: '', agenda: null }))
                       }}
                     />
@@ -780,6 +833,26 @@ function Dashboard({ user, onUserUpdate, onSignOut }) {
               {form.agenda && (
                 <AgendaPreview agenda={form.agenda} />
               )}
+              {draftFlowReport && (
+                <section className="meeting-process-export" aria-label="Export agenda and document PDFs">
+                  <div>
+                    <strong>Export your PDFs</strong>
+                    <span>Choose the agenda, document brief, or both.</span>
+                  </div>
+                  <div className="meeting-process-export-actions">
+                    <button className="secondary-action" type="button" onClick={() => exportCompletedFlow('agenda', draftFlowReport)}>
+                      Export agenda PDF
+                    </button>
+                    <button className="secondary-action" type="button" onClick={() => exportCompletedFlow('document', draftFlowReport)}>
+                      Export document PDF
+                    </button>
+                    <button className="secondary-action" type="button" onClick={() => exportCompletedFlow('combined', draftFlowReport)}>
+                      Export agenda with document PDF
+                    </button>
+                  </div>
+                  <small>In the print dialog, choose “Save as PDF”.</small>
+                </section>
+              )}
               {error && <div className="form-error" role="alert">{error}</div>}
               <div className="modal-actions">
                 <button className="secondary-action" type="button" onClick={() => setIsCreateOpen(false)} disabled={isSubmitting}>Cancel</button>
@@ -790,14 +863,7 @@ function Dashboard({ user, onUserUpdate, onSignOut }) {
         </div>
       )}
 
-      {completedFlowReport && (
-        <MeetingFlowPrintReport
-          request={completedFlowReport.request}
-          fileName={completedFlowReport.fileName}
-          brief={completedFlowReport.brief}
-          agenda={completedFlowReport.agenda}
-        />
-      )}
+      {flowExportReport && <MeetingFlowPrintReport {...flowExportReport} />}
 
     </div>
   )
@@ -901,44 +967,65 @@ function AgendaPreview({ agenda }) {
   )
 }
 
-function MeetingFlowPrintReport({ request, fileName, brief, agenda }) {
+function MeetingFlowPrintReport({ request, fileName, brief, agenda, exportType, submitted }) {
+  const reportTitle = exportType === 'agenda'
+    ? agenda.title || request.title || brief.title
+    : exportType === 'document'
+      ? brief.title
+      : request.title || brief.title
+  const reportLabel = {
+    agenda: 'Agenda only',
+    document: 'Document brief only',
+    combined: 'Agenda with document',
+  }[exportType]
+
   return (
     <article className="meeting-flow-print-report">
       <header>
-        <p>UNIVERSITY WORKFLOW · MEETING PROCESS</p>
-        <h1>{request.title || brief.title}</h1>
-        <span>Submitted document analysis and meeting agenda report</span>
+        <p>UNIVERSITY WORKFLOW · {reportLabel.toUpperCase()}</p>
+        <h1>{reportTitle}</h1>
+        <span>{reportLabel}</span>
       </header>
-      <section>
-        <h2>Process flow</h2>
-        <ol>
-          <li><strong>Document submitted:</strong> {fileName}</li>
-          <li><strong>Document read:</strong> detailed brief prepared from the source.</li>
-          <li><strong>Agenda created:</strong> agenda generated from the brief and meeting details.</li>
-          <li><strong>Meeting request submitted:</strong> Request #{request.id} was submitted for review.</li>
-        </ol>
-      </section>
-      <section>
-        <h2>Meeting details</h2>
-        <dl>
-          <div><dt>Request ID</dt><dd>{request.id}</dd></div>
-          <div><dt>Status</dt><dd>{request.status}</dd></div>
-          <div><dt>Topic</dt><dd>{request.topic || 'Not specified'}</dd></div>
-          <div><dt>Meeting date</dt><dd>{request.meetingDate ? formatDate(request.meetingDate) : 'Not selected'}</dd></div>
-          <div><dt>Meeting time</dt><dd>{request.meetingStart ? `${request.meetingStart.slice(0, 5)} (60 minutes)` : 'Not selected'}</dd></div>
-          <div><dt>Submitted</dt><dd>{request.createdAt ? formatDate(request.createdAt) : 'Not recorded'}</dd></div>
-        </dl>
-        <p className="meeting-flow-report-note">The request has been submitted and is waiting for review. Check its current status in the app.</p>
-      </section>
-      <section>
-        <h2>Detailed document brief</h2>
-        <DocumentBriefDetails brief={brief} />
-      </section>
-      <section>
-        <h2>Generated meeting agenda</h2>
-        <AgendaPreview agenda={agenda} />
-      </section>
-      <footer>Generated from {fileName} · Review source details before acting on dates, owners, or recommendations.</footer>
+      {exportType === 'combined' && submitted && (
+        <>
+          <section>
+            <h2>Process flow</h2>
+            <ol>
+              <li><strong>Document submitted:</strong> {fileName}</li>
+              <li><strong>Document read:</strong> detailed brief prepared from the source.</li>
+              <li><strong>Agenda created:</strong> agenda generated from the brief and meeting details.</li>
+              <li><strong>Meeting request submitted:</strong> Request #{request.id} was submitted for review.</li>
+            </ol>
+          </section>
+          <section>
+            <h2>Meeting details</h2>
+            <dl>
+              <div><dt>Request ID</dt><dd>{request.id}</dd></div>
+              <div><dt>Status</dt><dd>{request.status}</dd></div>
+              <div><dt>Topic</dt><dd>{request.topic || 'Not specified'}</dd></div>
+              <div><dt>Meeting date</dt><dd>{request.meetingDate ? formatDate(request.meetingDate) : 'Not selected'}</dd></div>
+              <div><dt>Meeting time</dt><dd>{request.meetingStart ? `${request.meetingStart.slice(0, 5)} (60 minutes)` : 'Not selected'}</dd></div>
+              <div><dt>Submitted</dt><dd>{request.createdAt ? formatDate(request.createdAt) : 'Not recorded'}</dd></div>
+            </dl>
+            <p className="meeting-flow-report-note">The request has been submitted and is waiting for review. Check its current status in the app.</p>
+          </section>
+        </>
+      )}
+      {exportType !== 'agenda' && (
+        <section>
+          <h2>Detailed document brief</h2>
+          <DocumentBriefDetails brief={brief} />
+        </section>
+      )}
+      {exportType !== 'document' && (
+        <section>
+          <h2>Generated meeting agenda</h2>
+          <AgendaPreview agenda={agenda} />
+        </section>
+      )}
+      {exportType === 'combined' && (
+        <footer>Generated from {fileName} · Review source details before acting on dates, owners, or recommendations.</footer>
+      )}
     </article>
   )
 }

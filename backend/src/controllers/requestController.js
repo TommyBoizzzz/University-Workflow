@@ -24,7 +24,9 @@ const requestSelection = `
     meetings.meeting_date::text AS "meetingDate",
     meetings.start_time AS "meetingStart",
     meetings.end_time AS "meetingEnd",
-    agendas.generated_content AS agenda
+    agendas.generated_content AS agenda,
+    meeting_documents.generated_brief AS "documentBrief",
+    meeting_documents.source_filename AS "sourceFilename"
   FROM requests
   JOIN users ON users.id = requests.teacher_id
   LEFT JOIN departments ON departments.id = users.department_id
@@ -36,6 +38,21 @@ const requestSelection = `
     ORDER BY created_at DESC, id DESC
     LIMIT 1
   ) agendas ON TRUE
+  LEFT JOIN LATERAL (
+    SELECT documents.generated_brief, documents.source_filename
+    FROM documents
+    WHERE documents.request_id = requests.id
+       OR (
+         documents.request_id IS NULL
+         AND documents.created_by = requests.teacher_id
+         AND documents.document_title = requests.title
+         AND documents.created_at <= requests.created_at
+         AND documents.created_at >= requests.created_at - INTERVAL '30 minutes'
+       )
+    ORDER BY (documents.request_id = requests.id) DESC,
+             documents.created_at DESC, documents.id DESC
+    LIMIT 1
+  ) meeting_documents ON TRUE
 `;
 
 export const listRequests = async (req, res) => {
@@ -59,7 +76,7 @@ export const listRequests = async (req, res) => {
 };
 
 export const createRequest = async (req, res) => {
-  const { type, title, topic = null, description = null, meetingDate, meetingStart, agenda } = req.body ?? {};
+  const { type, title, topic = null, description = null, meetingDate, meetingStart, agenda, documentId } = req.body ?? {};
   if (!["MEETING", "DOCUMENT"].includes(type)) {
     return res.status(400).json({
       success: false,
@@ -82,6 +99,15 @@ export const createRequest = async (req, res) => {
     return res.status(400).json({
       success: false,
       message: "Details must be text of 10,000 characters or fewer"
+    });
+  }
+  if (
+    documentId !== undefined &&
+    (!Number.isSafeInteger(documentId) || documentId <= 0 || type !== "MEETING")
+  ) {
+    return res.status(400).json({
+      success: false,
+      message: "The linked document is invalid"
     });
   }
   if (type === "MEETING" && (
@@ -144,6 +170,24 @@ export const createRequest = async (req, res) => {
       ]
     );
     const request = result.rows[0];
+    if (documentId !== undefined) {
+      const documentResult = await client.query(
+        `UPDATE documents
+         SET request_id = $1
+         WHERE id = $2 AND created_by = $3 AND request_id IS NULL
+           AND generated_brief IS NOT NULL
+         RETURNING id`,
+        [request.id, documentId, req.user.id]
+      );
+      if (documentResult.rowCount === 0) {
+        await client.query("ROLLBACK");
+        transactionStarted = false;
+        return res.status(409).json({
+          success: false,
+          message: "The document brief is unavailable or already linked to another meeting"
+        });
+      }
+    }
     if (type === "MEETING") {
       const startMinutes = timeToMinutes(meetingStart);
       const endMinutes = startMinutes + 60;
