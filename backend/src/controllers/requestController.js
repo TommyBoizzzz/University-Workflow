@@ -21,7 +21,7 @@ const requestSelection = `
     requests.teacher_id AS "teacherId",
     users.full_name AS "submittedBy",
     departments.department_name AS department,
-    meetings.meeting_date AS "meetingDate",
+    meetings.meeting_date::text AS "meetingDate",
     meetings.start_time AS "meetingStart",
     meetings.end_time AS "meetingEnd",
     agendas.generated_content AS agenda
@@ -362,7 +362,7 @@ export const reviewRequest = async (req, res) => {
     const requestResult = await client.query(
       `SELECT requests.id, requests.status, requests.request_type AS type,
               requests.title, requests.description, meetings.id AS "meetingId",
-              meetings.meeting_date AS "meetingDate", meetings.start_time AS "meetingStart",
+              meetings.meeting_date::text AS "meetingDate", meetings.start_time AS "meetingStart",
               meetings.end_time AS "meetingEnd"
        FROM requests
        LEFT JOIN meetings ON meetings.request_id = requests.id

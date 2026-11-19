@@ -3829,6 +3829,13 @@ button {
   line-height: 1.6;
 }
 
+.calendar-date-controls {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: flex-end;
+  gap: 8px;
+}
+
 .calendar-date-picker {
   display: grid;
   flex: 0 0 auto;
@@ -3847,6 +3854,38 @@ button {
   background: #fff;
   font: inherit;
   font-size: 11px;
+}
+
+.calendar-date-step,
+.calendar-today-button {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  min-height: 39px;
+  border: 1px solid #dfe9e7;
+  border-radius: 8px;
+  color: #3b555e;
+  background: #fff;
+  cursor: pointer;
+}
+
+.calendar-date-step {
+  width: 39px;
+  font-size: 20px;
+}
+
+.calendar-today-button {
+  padding: 0 12px;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.calendar-date-step:hover,
+.calendar-today-button:hover {
+  border-color: #9fc7bf;
+  background: #f4faf8;
 }
 
 .calendar-notice,
@@ -4375,8 +4414,13 @@ button {
     padding: 20px;
   }
 
-  .calendar-date-picker {
+  .calendar-date-controls {
     width: 100%;
+  }
+
+  .calendar-date-picker {
+    flex: 1;
+    min-width: 0;
   }
 
   .calendar-date-picker input {

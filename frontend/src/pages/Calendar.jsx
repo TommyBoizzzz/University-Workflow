@@ -9,6 +9,12 @@ const today = () => {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 };
 
+const addDays = (value, amount) => {
+  const date = new Date(`${value}T00:00:00.000Z`);
+  date.setUTCDate(date.getUTCDate() + amount);
+  return date.toISOString().slice(0, 10);
+};
+
 const formatEventTime = (value, timeZone) => {
   if (!value) return "All day";
   if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return "All day";
@@ -35,6 +41,12 @@ function Calendar({ canCreateMeeting, onRequestMeeting }) {
   const [timeZone, setTimeZone] = useState("Asia/Phnom_Penh");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+
+  const changeDate = (nextDate) => {
+    setError("");
+    setIsLoading(true);
+    setDate(nextDate);
+  };
 
   const refresh = useCallback(async () => {
     setError("");
@@ -86,13 +98,36 @@ function Calendar({ canCreateMeeting, onRequestMeeting }) {
           <h2>Plan a meeting with confidence.</h2>
           <p>See confirmed university meetings and request an open 60-minute weekday slot.</p>
         </div>
-        <label className="calendar-date-picker" htmlFor="calendar-date">
-          <span>View date</span>
-          <input id="calendar-date" type="date" value={date} onChange={(event) => {
-            setIsLoading(true);
-            setDate(event.target.value);
-          }} />
-        </label>
+        <div className="calendar-date-controls">
+          <button
+            className="calendar-date-step"
+            type="button"
+            aria-label="Previous day"
+            onClick={() => changeDate(addDays(date, -1))}
+          >
+            ‹
+          </button>
+          <label className="calendar-date-picker" htmlFor="calendar-date">
+            <span>View date</span>
+            <input
+              id="calendar-date"
+              type="date"
+              value={date}
+              onChange={(event) => changeDate(event.target.value)}
+            />
+          </label>
+          <button
+            className="calendar-date-step"
+            type="button"
+            aria-label="Next day"
+            onClick={() => changeDate(addDays(date, 1))}
+          >
+            ›
+          </button>
+          <button className="calendar-today-button" type="button" onClick={() => changeDate(today())}>
+            Today
+          </button>
+        </div>
       </section>
 
       {error && <div className="workspace-error calendar-error" role="alert">{error}</div>}

@@ -29,7 +29,7 @@ export async function getBusyRanges(date, { queryable = pool, excludeRequestId }
 export async function getCalendarEvents(from, to) {
   const result = await pool.query(
     `SELECT meetings.id, requests.id AS "requestId", requests.title,
-            requests.status, meetings.meeting_date AS date,
+            requests.status, meetings.meeting_date::text AS date,
             meetings.start_time AS "startTime", meetings.end_time AS "endTime",
             users.full_name AS "submittedBy"
      FROM meetings
