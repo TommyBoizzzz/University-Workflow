@@ -214,10 +214,13 @@ function getAgendaExportHtml(request) {
 
   return `<!doctype html>
 <html><head><meta charset="utf-8"><title>${escapeAgendaExportHtml(agenda.title || request.title)}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Khmer:wght@100..900&display=swap" rel="stylesheet">
 <style>
 @page{size:A4;margin:10mm 12mm 12mm}
 *{box-sizing:border-box}
-body{font-family:"Segoe UI",Arial,sans-serif;color:#26384a;line-height:1.42;margin:0;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+body{font-family:"Noto Sans Khmer",sans-serif;color:#26384a;line-height:1.42;margin:0;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .page{max-width:186mm;margin:0 auto;padding:5mm 0 4mm}
 .top-rule{height:4px;margin-bottom:10px;border-top:3px solid #a77a2e;border-right:110mm solid #4b7e78;border-bottom:1px solid #d7b867}
 .document-header{display:flex;align-items:flex-end;justify-content:space-between;padding:3px 0 12px;border-bottom:1px solid #e4e5dc}
@@ -227,7 +230,7 @@ body{font-family:"Segoe UI",Arial,sans-serif;color:#26384a;line-height:1.42;marg
 .document-no strong{display:block;margin-top:2px;color:#6f5f32;font-size:9px}
 .title-panel{margin:12px 0 10px;padding:15px 18px 14px;border-left:5px solid #b18b45;border-radius:0 8px 8px 0;background:#f7f1df}
 .title-panel .eyebrow{margin:0 0 5px;color:#7d7a66;font-size:8px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase}
-.title-panel h1{margin:0;color:#294c5a;font-family:Georgia,"Times New Roman",serif;font-size:22px;line-height:1.15}
+.title-panel h1{margin:0;color:#294c5a;font-family:"Noto Sans Khmer",sans-serif;font-size:22px;line-height:1.35}
 .meta-strip{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 11px}
 .meta-item{display:inline-flex;align-items:center;min-height:23px;padding:4px 8px;border:1px solid #e4e2d5;border-radius:999px;color:#677477;font-size:9px}
 .meta-item strong{margin-right:5px;color:#7e7149;font-size:8px;text-transform:uppercase;letter-spacing:.6px}

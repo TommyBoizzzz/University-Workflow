@@ -280,10 +280,13 @@ function getDocumentExportHtml(document) {
 
   return `<!doctype html>
 <html><head><meta charset="utf-8"><title>${escapeDocumentExportHtml(document.title)}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Khmer:wght@100..900&display=swap" rel="stylesheet">
 <style>
 @page{size:A4;margin:10mm 12mm 12mm}
 *{box-sizing:border-box}
-body{font-family:"Segoe UI",Arial,sans-serif;color:#26384a;line-height:1.42;margin:0;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+body{font-family:"Noto Sans Khmer",sans-serif;color:#26384a;line-height:1.42;margin:0;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .page{max-width:186mm;margin:0 auto;padding:5mm 0 4mm;background:#fff}
 .top-rule{height:4px;margin:0 0 10px;border-top:3px solid #1c6678;border-right:62mm solid #d4a94a;border-bottom:1px solid #2d8c80}
 .document-header{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;padding:3px 0 12px;border-bottom:1px solid #dce6e8}
@@ -293,7 +296,7 @@ body{font-family:"Segoe UI",Arial,sans-serif;color:#26384a;line-height:1.42;marg
 .document-no strong{display:block;margin-top:2px;color:#435966;font-size:9px}
 .title-panel{margin:12px 0 10px;padding:15px 18px 14px;border-left:5px solid #2b8176;border-radius:0 8px 8px 0;background:#edf6f4}
 .title-panel .eyebrow{margin:0 0 5px;color:#6a7d7e;font-size:8px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase}
-.title-panel h1{margin:0;color:#173b55;font-family:Georgia,"Times New Roman",serif;font-size:22px;line-height:1.15;letter-spacing:-.2px}
+.title-panel h1{margin:0;color:#173b55;font-family:"Noto Sans Khmer",sans-serif;font-size:22px;line-height:1.35;letter-spacing:0}
 .meta-strip{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 11px}
 .meta-item{display:inline-flex;align-items:center;min-height:23px;padding:4px 8px;border:1px solid #dde8e7;border-radius:999px;background:#fff;color:#62777a;font-size:9px}
 .meta-item strong{margin-right:5px;color:#315f66;font-size:8px;text-transform:uppercase;letter-spacing:.6px}

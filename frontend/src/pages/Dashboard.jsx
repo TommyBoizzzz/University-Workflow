@@ -13,6 +13,7 @@ import Agenda from './Agenda.jsx'
 import Calendar from './Calendar.jsx'
 import Documents from './Documents.jsx'
 import Meeting from './Meeting.jsx'
+import TeacherRequests from './TeacherRequests.jsx'
 import UserManagement from './UserManagement.jsx'
 
 const navigation = [
@@ -568,27 +569,41 @@ function Dashboard({ user, onUserUpdate, onSignOut }) {
           )}
 
           {(activePage === 'requests' && canReadRequests) && (
-            <section className="content-card request-page-card">
-              <div className="card-heading">
-                <div>
-                  <h2>Request activity</h2>
-                  <p>{`${requests.length} ${requests.length === 1 ? 'request' : 'requests'} in this view`}</p>
-                </div>
-                <button className="icon-action" type="button" onClick={loadRequests} aria-label="Refresh requests">↻</button>
-              </div>
-              <RequestList
-                requests={requests}
-                isLoading={isLoading}
-                isTeacher={isTeacher}
-                canReview={canReview}
-                onReview={handleReview}
-                onDelete={handleDeleteRequest}
-                onExport={handleExportRequest}
-                userId={user.id}
-                isSuperAdmin={user.role === 'SUPERADMIN'}
-                workingRequestId={workingRequestId}
-              />
-            </section>
+            isTeacher ? (
+                <TeacherRequests
+                  requests={requests}
+                  isLoading={isLoading}
+                  onDelete={handleDeleteRequest}
+                  onExport={handleExportRequest}
+                  userId={user.id}
+                  isSuperAdmin={user.role === 'SUPERADMIN'}
+                  workingRequestId={workingRequestId}
+                />
+            ) : (
+              <section className="content-card request-page-card">
+                <>
+                  <div className="card-heading">
+                    <div>
+                      <h2>Request activity</h2>
+                      <p>{`${requests.length} ${requests.length === 1 ? 'request' : 'requests'} in this view`}</p>
+                    </div>
+                    <button className="icon-action" type="button" onClick={loadRequests} aria-label="Refresh requests">↻</button>
+                  </div>
+                  <RequestList
+                    requests={requests}
+                    isLoading={isLoading}
+                    isTeacher={isTeacher}
+                    canReview={canReview}
+                    onReview={handleReview}
+                    onDelete={handleDeleteRequest}
+                    onExport={handleExportRequest}
+                    userId={user.id}
+                    isSuperAdmin={user.role === 'SUPERADMIN'}
+                    workingRequestId={workingRequestId}
+                  />
+                </>
+              </section>
+            )
           )}
 
           {activePage === 'approvals' && canReadApprovals && (
@@ -1225,9 +1240,12 @@ function getRequestExportHtml(request) {
 
   return `<!doctype html>
 <html><head><meta charset="utf-8"><title>${escapeHtml(request.title)}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Khmer:wght@100..900&display=swap" rel="stylesheet">
 <style>
 *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
-body{font-family:Arial,sans-serif;color:#243247;line-height:1.35;margin:20px}
+body{font-family:"Noto Sans Khmer",sans-serif;color:#243247;line-height:1.35;margin:20px}
 h1{color:#1f3a5b;margin-bottom:2px}h2{font-size:17px;margin:0}
 .meta{color:#65758b;margin:0 0 10px}.details{width:100%;border-collapse:collapse}
 .details th,.details td{padding:5px 7px;border:1px solid #dce3eb;text-align:left;vertical-align:top}
