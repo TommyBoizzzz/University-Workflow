@@ -21,8 +21,12 @@ const palettes = {
   },
 }
 
-const safeText = (value) => String(value ?? '')
-  .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\uFFFE\uFFFF]/g, '')
+const safeText = (value) => [...String(value ?? '')]
+  .filter((character) => {
+    const code = character.codePointAt(0)
+    return !(code <= 8 || code === 11 || code === 12 || (code >= 14 && code <= 31) || code === 0xFFFE || code === 0xFFFF)
+  })
+  .join('')
 
 export async function createWordDocumentBlob({
   title,
@@ -79,6 +83,7 @@ export async function createWordDocumentBlob({
       spacing: { before: 180, after: 20 },
     }),
     new Paragraph({
+      heading: HeadingLevel.TITLE,
       children: [run(title, {
         bold: true,
         color: colors.title,
@@ -92,6 +97,7 @@ export async function createWordDocumentBlob({
     ...(metadataParagraph ? [metadataParagraph] : []),
     ...(sectionLabel ? [
       new Paragraph({
+        heading: HeadingLevel.HEADING_1,
         children: [run(sectionLabel.toUpperCase(), {
           bold: true,
           color: colors.title,
@@ -109,6 +115,7 @@ export async function createWordDocumentBlob({
 
       return [
         new Paragraph({
+          heading: HeadingLevel.HEADING_2,
           children: [run(section.title.toUpperCase(), {
             bold: true,
             color: colors.heading,
