@@ -258,7 +258,7 @@ body{font-family:"Noto Sans Khmer",sans-serif;color:#26384a;line-height:1.42;mar
 <main class="page">
   <div class="top-rule"></div>
   <header class="document-header">
-    <div class="brand">University Workflow<span class="brand-line"></span></div>
+    <div class="brand">EduFlow<span class="brand-line"></span></div>
     <div class="document-no">Meeting Agenda<strong>${escapeAgendaExportHtml(request.status || "PENDING")}</strong></div>
   </header>
   <section class="title-panel">
@@ -273,7 +273,7 @@ body{font-family:"Noto Sans Khmer",sans-serif;color:#26384a;line-height:1.42;mar
   ${objectivesHtml}
   ${agendaItemsHtml}
   ${outcomesHtml}
-  <footer class="footer"><span>University Workflow · Meeting Agenda</span><span>Confidential</span></footer>
+  <footer class="footer"><span>EduFlow · Meeting Agenda</span><span>Confidential</span></footer>
 </main>
 </body></html>`;
 }

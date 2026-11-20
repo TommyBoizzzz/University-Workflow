@@ -45,7 +45,7 @@ export async function getCalendarEvents(from, to) {
     ...meeting,
     start: localDateTimeToDate(meeting.date, meeting.startTime.slice(0, 5)).toISOString(),
     end: localDateTimeToDate(meeting.date, meeting.endTime.slice(0, 5)).toISOString(),
-    source: "University Workflow"
+    source: "EduFlow"
   }));
   return {
     events: internalEvents,

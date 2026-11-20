@@ -36,7 +36,7 @@ function App() {
   if (isRestoringSession) {
     return (
       <main className="session-loading" aria-label="Restoring your session">
-        <span className="loading-mark" aria-hidden="true">U</span>
+        <img className="loading-mark" src="/brand-mark.svg" alt="" aria-hidden="true" />
         <p>Loading your workspace…</p>
       </main>
     )

@@ -27,7 +27,7 @@ app.use("/api/users", userRoutes);
 app.get("/", (req, res) => {
   res.json({
     success: true,
-    message: "University Workflow Automation API is running!"
+    message: "EduFlow API is running!"
   });
 });
 
@@ -70,7 +70,7 @@ const startServer = async () => {
 
     app.listen(PORT, () => {
       console.log("--------------------------------");
-      console.log("University Workflow API Started");
+      console.log("EduFlow API Started");
       console.log(`Server: http://localhost:${PORT}`);
       console.log("--------------------------------");
     });

@@ -475,9 +475,9 @@ function Dashboard({ user, onUserUpdate, onSignOut }) {
   return (
     <div className="workspace">
       <aside className="workspace-sidebar">
-        <a className="workspace-brand" href="/" aria-label="CampusFlow home">
-          <span className="workspace-brand-mark">U</span>
-          <span>Campus<span>Flow</span></span>
+        <a className="workspace-brand" href="/" aria-label="EduFlow home">
+          <img className="workspace-brand-mark" src="/brand-mark.svg" alt="" aria-hidden="true" />
+          <span>Edu<span>Flow</span></span>
         </a>
 
         <div className="workspace-nav-label">WORKSPACE</div>
@@ -526,7 +526,7 @@ function Dashboard({ user, onUserUpdate, onSignOut }) {
         <div className="workspace-content">
           <div className="page-heading">
             <div>
-              <p className="page-eyebrow">{user.department || 'UNIVERSITY WORKFLOW'}</p>
+              <p className="page-eyebrow">{user.department || 'EDUFLOW'}</p>
               <h1>{activePage === 'overview' ? `Good day, ${user.fullName.split(' ')[0]}` : pageTitle}</h1>
               <p className="page-subtitle">
                 {activePage === 'overview'
@@ -1068,7 +1068,7 @@ function MeetingFlowPrintReport({ request, fileName, brief, agenda, exportType, 
   return (
     <article className="meeting-flow-print-report">
       <header>
-        <p>UNIVERSITY WORKFLOW · {reportLabel.toUpperCase()}</p>
+        <p>EDUFLOW · {reportLabel.toUpperCase()}</p>
         <h1>{reportTitle}</h1>
         <span>{reportLabel}</span>
       </header>

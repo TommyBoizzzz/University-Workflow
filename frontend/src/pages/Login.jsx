@@ -29,12 +29,12 @@ function Login({ onLogin }) {
         <div className="story-glow story-glow-one" />
         <div className="story-glow story-glow-two" />
         <header className="brand-lockup">
-          <span className="brand-mark" aria-hidden="true">U</span>
-          <span className="brand-name">Campus<span>Flow</span></span>
+          <img className="brand-mark" src="/brand-mark.svg" alt="" aria-hidden="true" />
+          <span className="brand-name">Edu<span>Flow</span></span>
         </header>
 
         <div className="story-content">
-          <div className="story-kicker"><span /> UNIVERSITY WORKFLOW, SIMPLIFIED</div>
+          <div className="story-kicker"><span /> EDUFLOW · UNIVERSITY WORKFLOW, SIMPLIFIED</div>
           <h1>Make room for<br /><span>what matters.</span></h1>
           <p>One calm place to manage requests, coordinate meetings, and keep campus work moving.</p>
 
@@ -74,8 +74,8 @@ function Login({ onLogin }) {
       <section className="login-panel">
         <div className="login-form-wrap">
           <div className="mobile-brand brand-lockup">
-            <span className="brand-mark" aria-hidden="true">U</span>
-            <span className="brand-name">Campus<span>Flow</span></span>
+            <img className="brand-mark" src="/brand-mark.svg" alt="" aria-hidden="true" />
+            <span className="brand-name">Edu<span>Flow</span></span>
           </div>
 
           <div className="form-heading">
@@ -154,8 +154,8 @@ function Login({ onLogin }) {
         </div>
 
         <footer className="login-footer">
-          <span>© {new Date().getFullYear()} CampusFlow</span>
-          <span>University Workflow Automation</span>
+          <span>© {new Date().getFullYear()} EduFlow</span>
+          <span>University workflow, made simple</span>
         </footer>
       </section>
     </main>

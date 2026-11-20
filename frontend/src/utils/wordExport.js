@@ -61,7 +61,7 @@ export async function createWordDocumentBlob({
     : null
   const content = [
     new Paragraph({
-      children: [run('UNIVERSITY WORKFLOW', {
+      children: [run('EDUFLOW', {
         bold: true,
         color: colors.brand,
         size: 18,
@@ -153,14 +153,14 @@ export async function createWordDocumentBlob({
       ]
     }),
     new Paragraph({
-      children: [run('University Workflow  ·  Confidential', { color: '93A2A5', size: 15 })],
+      children: [run('EduFlow  ·  Confidential', { color: '93A2A5', size: 15 })],
       border: { top: { style: BorderStyle.SINGLE, size: 4, color: colors.border, space: 6 } },
       spacing: { before: 240 },
     }),
   ]
 
   const wordDocument = new Document({
-    creator: 'University Workflow',
+    creator: 'EduFlow',
     title: safeText(title),
     sections: [{
       properties: {
