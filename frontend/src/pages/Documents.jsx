@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { createDocumentBrief, getDocumentBriefs } from "../services/documentService.js";
+import { downloadWordDocument } from "../utils/wordExport.js";
 
 function Documents({ canCreateBrief }) {
   const [documents, setDocuments] = useState([]);
@@ -75,7 +76,7 @@ function Documents({ canCreateBrief }) {
     }
   };
 
-  const handleExportDocument = (document, format) => {
+  const handleExportDocument = async (document, format) => {
     setError("");
     setNotice("");
     try {
@@ -83,7 +84,7 @@ function Documents({ canCreateBrief }) {
         openDocumentPdf(document);
         setNotice("The brief is ready in the print dialog. Choose Save as PDF to export it.");
       } else {
-        downloadDocumentWord(document);
+        await downloadDocumentWord(document);
         setNotice("Word document exported.");
       }
     } catch (exportError) {
@@ -363,18 +364,39 @@ function openDocumentPdf(document) {
   }, 500);
 }
 
-function downloadDocumentWord(doc) {
-  const blob = new Blob(["\ufeff", getDocumentExportHtml(doc)], {
-    type: "application/msword;charset=utf-8"
+async function downloadDocumentWord(doc) {
+  const brief = doc.brief || {};
+  const actions = Array.isArray(brief.actions)
+    ? brief.actions.map((action) => [
+      action.task,
+      action.owner ? `Owner: ${action.owner}` : "",
+      action.dueDate ? `Due: ${action.dueDate}` : "",
+    ].filter(Boolean).join(" — "))
+    : [];
+  const sections = [
+    ...(brief.executiveSummary ? [{
+      title: "Executive summary",
+      paragraphs: [brief.executiveSummary],
+      emphasis: true,
+    }] : []),
+    ...(brief.keyPoints?.length ? [{ title: "Key points", items: brief.keyPoints }] : []),
+    ...(brief.dates?.length ? [{ title: "Important dates", items: brief.dates }] : []),
+    ...(actions.length ? [{ title: "Follow-up actions", items: actions }] : []),
+    ...(brief.risks?.length ? [{ title: "Risks and open questions", items: brief.risks }] : []),
+  ];
+
+  await downloadWordDocument({
+    fileName: getDocumentExportFileName(doc),
+    title: doc.title || brief.title || "Document brief",
+    subtitle: "GENERATED DOCUMENT SUMMARY",
+    sectionLabel: "Document analysis",
+    metadata: [
+      { label: "Source", value: doc.sourceFilename || "Saved document" },
+      { label: "Status", value: doc.status || "READY" },
+    ],
+    theme: "teal",
+    sections,
   });
-  const url = URL.createObjectURL(blob);
-  const link = window.document.createElement("a");
-  link.href = url;
-  link.download = `${getDocumentExportFileName(doc)}.doc`;
-  window.document.body.appendChild(link);
-  link.click();
-  link.remove();
-  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 export default Documents;

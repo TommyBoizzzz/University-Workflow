@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { downloadWordDocument } from "../utils/wordExport.js";
 
 function formatMeetingDate(value) {
   if (!value) return "Date not selected";
@@ -21,7 +22,7 @@ function Agenda({ requests, isLoading }) {
   const selectedRequest = agendas.find((request) => request.id === selectedRequestId) || agendas[0];
   const agenda = selectedRequest?.agenda;
 
-  const handleExportAgenda = (request, format) => {
+  const handleExportAgenda = async (request, format) => {
     setError("");
     setNotice("");
     try {
@@ -29,7 +30,7 @@ function Agenda({ requests, isLoading }) {
         openAgendaPdf(request);
         setNotice("The agenda is ready in the print dialog. Choose Save as PDF to export it.");
       } else {
-        downloadAgendaWord(request);
+        await downloadAgendaWord(request);
         setNotice("Word agenda exported.");
       }
     } catch (exportError) {
@@ -305,18 +306,37 @@ function openAgendaPdf(request) {
   }, 500);
 }
 
-function downloadAgendaWord(request) {
-  const blob = new Blob(["\ufeff", getAgendaExportHtml(request)], {
-    type: "application/msword;charset=utf-8"
+async function downloadAgendaWord(request) {
+  const agenda = request.agenda || {};
+  const objectives = Array.isArray(agenda.objectives) ? agenda.objectives : [];
+  const items = Array.isArray(agenda.items) ? agenda.items : [];
+  const outcomes = Array.isArray(agenda.outcomes) ? agenda.outcomes : [];
+  const sections = [
+    ...(objectives.length ? [{ title: "Objectives", items: objectives }] : []),
+    {
+      title: "Agenda items",
+      numberedItems: items.map((item) => [
+        item.title || "Agenda item",
+        item.durationMinutes ? `${item.durationMinutes} min` : "",
+        item.details || "",
+      ].filter(Boolean).join(" — ")),
+    },
+    ...(outcomes.length ? [{ title: "Expected outcomes", items: outcomes }] : []),
+  ];
+
+  await downloadWordDocument({
+    fileName: getAgendaExportFileName(request),
+    title: agenda.title || request.title || "Meeting Agenda",
+    subtitle: "GENERATED MEETING AGENDA",
+    sectionLabel: "Meeting plan",
+    theme: "gold",
+    metadata: [
+      { label: "Date", value: formatMeetingDate(request.meetingDate) },
+      ...(request.meetingStart ? [{ label: "Time", value: request.meetingStart.slice(0, 5) }] : []),
+      { label: "Status", value: request.status || "PENDING" },
+    ],
+    sections,
   });
-  const url = URL.createObjectURL(blob);
-  const link = window.document.createElement("a");
-  link.href = url;
-  link.download = `${getAgendaExportFileName(request)}.doc`;
-  window.document.body.appendChild(link);
-  link.click();
-  link.remove();
-  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 export default Agenda;

@@ -9,6 +9,7 @@ import {
 import { getCurrentUser } from '../services/authService.js'
 import { getAvailability, getScheduleRecommendations } from '../services/calendarService.js'
 import { createDocumentBrief } from '../services/documentService.js'
+import { downloadWordDocument } from '../utils/wordExport.js'
 import Agenda from './Agenda.jsx'
 import Calendar from './Calendar.jsx'
 import Documents from './Documents.jsx'
@@ -30,15 +31,50 @@ const navigation = [
     ),
     permission: ['requests', 'read'],
   },
+  { id: 'calendar', path: '/calendar', label: 'Calendar', icon: '▦', permission: ['calendar', 'read'] },
+  { id: 'documents', path: '/documents', label: 'Documents', icon: '▤', permission: ['documents', 'read'] },
   { id: 'fill-meeting', path: '/meetings', label: 'Meeting', icon: '▤', permission: ['requests', 'read'] },
   { id: 'agenda', path: '/agenda', label: 'Agenda', icon: '≡', permission: ['requests', 'read'] },
   { id: 'approvals', path: '/approvals', label: 'Approvals', icon: '✓', permission: ['approvals', 'read'] },
-  { id: 'documents', path: '/documents', label: 'Documents', icon: '▤', permission: ['documents', 'read'] },
-  { id: 'calendar', path: '/calendar', label: 'Calendar', icon: '▦', permission: ['calendar', 'read'] },
   { id: 'users', path: '/users', label: 'Users', icon: '♙', permission: ['users', 'read'] },
 ]
 
 const initialForm = { title: '', topic: '', description: '', meetingDate: '', meetingStart: '', agenda: null }
+
+const meetingTemplates = [
+  {
+    label: 'Course planning',
+    form: {
+      title: 'Course planning meeting',
+      topic: 'Course goals, materials, and upcoming deadlines',
+      description: 'I would like to review course priorities, align on materials, and agree on next steps.',
+    },
+  },
+  {
+    label: 'Student support',
+    form: {
+      title: 'Student support discussion',
+      topic: 'Student needs and available support',
+      description: 'I would like to discuss student needs, relevant support options, and any follow-up actions.',
+    },
+  },
+  {
+    label: 'Research project',
+    form: {
+      title: 'Research project check-in',
+      topic: 'Project progress, blockers, and next steps',
+      description: 'I would like to review progress, discuss current blockers, and agree on the next project milestones.',
+    },
+  },
+  {
+    label: 'Team coordination',
+    form: {
+      title: 'Team coordination meeting',
+      topic: 'Team updates and upcoming priorities',
+      description: 'I would like to share updates, align on upcoming priorities, and confirm owners for follow-up tasks.',
+    },
+  },
+]
 
 function getPageFromPathname(pathname) {
   return navigation.find((item) => item.path === pathname)?.id || 'overview'
@@ -78,8 +114,7 @@ function Dashboard({ user, onUserUpdate, onSignOut }) {
   const [availabilityWarning, setAvailabilityWarning] = useState('')
   const [isAvailabilityLoading, setIsAvailabilityLoading] = useState(false)
   const [scheduleRecommendations, setScheduleRecommendations] = useState([])
-  const [isScheduleGenerating, setIsScheduleGenerating] = useState(false)
-  const [isAgendaGenerating, setIsAgendaGenerating] = useState(false)
+  const [isMeetingPlanGenerating, setIsMeetingPlanGenerating] = useState(false)
   const [workingRequestId, setWorkingRequestId] = useState(null)
   const isTeacher = user.role === 'TEACHER'
   const hasPermission = (resource, action, fallback = false) => (
@@ -260,20 +295,43 @@ function Dashboard({ user, onUserUpdate, onSignOut }) {
     }
   }
 
-  const handleGenerateAgenda = async () => {
+  const handleGenerateMeetingPlan = async () => {
     setError('')
-    setIsAgendaGenerating(true)
+    setIsMeetingPlanGenerating(true)
+    const meetingDetails = {
+      title: form.title,
+      topic: form.topic,
+      description: form.description,
+    }
+
     try {
-      const result = await generateAgenda({
-        title: form.title,
-        topic: form.topic,
-        description: form.description,
-      })
-      setForm((previous) => ({ ...previous, agenda: result.agenda }))
-    } catch (agendaError) {
-      setError(agendaError.message || 'Unable to generate an agenda.')
+      const [agendaResult, scheduleResult] = await Promise.allSettled([
+        generateAgenda(meetingDetails),
+        getScheduleRecommendations({ ...meetingDetails, date: form.meetingDate }),
+      ])
+
+      const failures = []
+      if (agendaResult.status === 'fulfilled') {
+        setForm((previous) => ({ ...previous, agenda: agendaResult.value.agenda }))
+      } else {
+        failures.push(`Agenda: ${agendaResult.reason?.message || 'Unable to generate an agenda.'}`)
+      }
+
+      if (scheduleResult.status === 'fulfilled') {
+        const recommendations = scheduleResult.value.recommendations
+        setScheduleRecommendations(recommendations)
+        if (!form.meetingStart && recommendations[0]) {
+          setForm((previous) => ({ ...previous, meetingStart: recommendations[0].time }))
+        }
+      } else {
+        failures.push(`Time suggestions: ${scheduleResult.reason?.message || 'Unable to recommend a meeting time.'}`)
+      }
+
+      if (failures.length) setError(failures.join(' '))
+    } catch (planError) {
+      setError(planError.message || 'Unable to build your meeting plan.')
     } finally {
-      setIsAgendaGenerating(false)
+      setIsMeetingPlanGenerating(false)
     }
   }
 
@@ -317,31 +375,17 @@ function Dashboard({ user, onUserUpdate, onSignOut }) {
     }
   }
 
-  const handleGenerateSchedule = async () => {
-    setError('')
-    setIsScheduleGenerating(true)
-    try {
-      const result = await getScheduleRecommendations({
-        date: form.meetingDate,
-        title: form.title,
-        topic: form.topic,
-        description: form.description,
-      })
-      setScheduleRecommendations(result.recommendations)
-    } catch (scheduleError) {
-      setScheduleRecommendations([])
-      setError(scheduleError.message || 'Unable to recommend an available meeting time.')
-    } finally {
-      setIsScheduleGenerating(false)
-    }
-  }
-
   const updateMeetingDetails = (field, value) => {
     setForm((previous) => ({
       ...previous,
       [field]: value,
       ...(['title', 'topic', 'description'].includes(field) ? { agenda: null } : {}),
     }))
+    setScheduleRecommendations([])
+  }
+
+  const applyMeetingTemplate = (template) => {
+    setForm((previous) => ({ ...previous, ...template.form, agenda: null }))
     setScheduleRecommendations([])
   }
 
@@ -377,14 +421,14 @@ function Dashboard({ user, onUserUpdate, onSignOut }) {
     }
   }
 
-  const handleExportRequest = (request, format) => {
+  const handleExportRequest = async (request, format) => {
     setError('')
     try {
       if (format === 'pdf') {
         openRequestPdf(request)
         setSuccessMessage('The request is ready in the print dialog. Choose Save as PDF to export it.')
       } else {
-        downloadRequestWordDocument(request)
+        await downloadRequestWordDocument(request)
         setSuccessMessage('Word document exported.')
       }
     } catch (exportError) {
@@ -781,39 +825,26 @@ function Dashboard({ user, onUserUpdate, onSignOut }) {
                     </div>
                   )}
                   {documentBrief && (
-                    <MeetingDetailFields form={form} onUpdate={updateMeetingDetails} />
-                  )}
-                  {documentBrief && (
-                    <div className="agenda-generator">
-                      <div>
-                        <strong>Meeting agenda</strong>
-                        <span>{form.agenda ? 'Agenda based on your meeting details is ready.' : 'Review the meeting details above, then generate the agenda.'}</span>
-                      </div>
-                      <button
-                        className="secondary-action"
-                        type="button"
-                        onClick={handleGenerateAgenda}
-                        disabled={!form.title.trim() || isAgendaGenerating || isSubmitting}
-                      >
-                        {isAgendaGenerating ? 'Generating...' : form.agenda ? 'Regenerate agenda' : 'Generate agenda'}
-                      </button>
-                    </div>
+                    <>
+                      <QuickMeetingTemplates onSelect={applyMeetingTemplate} disabled={isMeetingPlanGenerating} />
+                      <MeetingDetailFields
+                        form={form}
+                        onUpdate={updateMeetingDetails}
+                        disabled={isMeetingPlanGenerating}
+                      />
+                    </>
                   )}
                 </section>
               )}
 
               {requestMethod === 'form' && (
                 <>
-                  <MeetingDetailFields form={form} onUpdate={updateMeetingDetails} />
-                  <div className="agenda-generator">
-                    <div>
-                      <strong>Meeting agenda</strong>
-                      <span>{form.agenda ? 'Gemini agenda ready and will be included with your request.' : 'Generate an agenda with Gemini before you submit.'}</span>
-                    </div>
-                    <button className="secondary-action" type="button" onClick={handleGenerateAgenda} disabled={!form.title.trim() || isAgendaGenerating || isSubmitting}>
-                      {isAgendaGenerating ? 'Generating...' : form.agenda ? 'Regenerate agenda' : 'Generate with Gemini'}
-                    </button>
-                  </div>
+                  <QuickMeetingTemplates onSelect={applyMeetingTemplate} disabled={isMeetingPlanGenerating} />
+                  <MeetingDetailFields
+                    form={form}
+                    onUpdate={updateMeetingDetails}
+                    disabled={isMeetingPlanGenerating}
+                  />
                 </>
               )}
 
@@ -825,6 +856,7 @@ function Dashboard({ user, onUserUpdate, onSignOut }) {
                   min={getTodayDate()}
                   required
                   value={form.meetingDate}
+                  disabled={isMeetingPlanGenerating}
                   onChange={(event) => {
                     setIsAvailabilityLoading(true)
                     setScheduleRecommendations([])
@@ -836,7 +868,7 @@ function Dashboard({ user, onUserUpdate, onSignOut }) {
                   id="meeting-start"
                   required
                   value={form.meetingStart}
-                  disabled={isAvailabilityLoading || availableSlots.length === 0}
+                  disabled={isAvailabilityLoading || availableSlots.length === 0 || isMeetingPlanGenerating}
                   onChange={(event) => setForm((previous) => ({ ...previous, meetingStart: event.target.value }))}
                 >
                   <option value="">{isAvailabilityLoading ? 'Checking availability...' : 'Choose an open time'}</option>
@@ -850,22 +882,15 @@ function Dashboard({ user, onUserUpdate, onSignOut }) {
                 {!isAvailabilityLoading && availableSlots.length === 0 && (
                   <p className="meeting-availability-warning">No open times for this date. Choose another weekday.</p>
                 )}
-                <button
-                  className="secondary-action schedule-suggest-button"
-                  type="button"
-                  onClick={handleGenerateSchedule}
-                  disabled={!form.title.trim() || isAvailabilityLoading || availableSlots.length === 0 || isScheduleGenerating || isSubmitting}
-                >
-                  {isScheduleGenerating ? 'Finding a good fit...' : 'Ask Gemini to suggest times'}
-                </button>
                 {scheduleRecommendations.length > 0 && (
                   <div className="schedule-recommendation-list" aria-label="Gemini schedule suggestions">
-                    <strong>Gemini suggestions — choose one to use it</strong>
+                    <strong>Suggested times — choose one to use it</strong>
                     {scheduleRecommendations.map((recommendation) => (
                       <button
                         className={form.meetingStart === recommendation.time ? 'selected' : ''}
                         type="button"
                         key={recommendation.time}
+                        disabled={isMeetingPlanGenerating}
                         onClick={() => setForm((previous) => ({ ...previous, meetingStart: recommendation.time }))}
                       >
                         <span>{recommendation.time}</span><small>{recommendation.reason || 'Recommended from the available university schedule.'}</small>
@@ -873,6 +898,22 @@ function Dashboard({ user, onUserUpdate, onSignOut }) {
                     ))}
                   </div>
                 )}
+              </div>
+
+              <div className="meeting-plan-action">
+                <button
+                  className="secondary-action"
+                  type="button"
+                  onClick={handleGenerateMeetingPlan}
+                  disabled={!form.title.trim() || !form.meetingDate || isAvailabilityLoading || availableSlots.length === 0 || isMeetingPlanGenerating || isSubmitting || isDocumentAnalyzing}
+                >
+                  {isMeetingPlanGenerating
+                    ? 'Building your meeting plan...'
+                    : form.agenda || scheduleRecommendations.length
+                      ? 'Refresh AI meeting plan'
+                      : 'Build my meeting plan'}
+                </button>
+                <small>Creates a 60-minute agenda and suggests open times. Review and edit before submitting.</small>
               </div>
 
               {form.agenda && (
@@ -1075,17 +1116,32 @@ function MeetingFlowPrintReport({ request, fileName, brief, agenda, exportType, 
   )
 }
 
-function MeetingDetailFields({ form, onUpdate }) {
+function QuickMeetingTemplates({ onSelect, disabled }) {
+  return (
+    <fieldset className="meeting-quick-templates" disabled={disabled}>
+      <legend>Quick start <span>Fill in a starting point, then edit it</span></legend>
+      <div>
+        {meetingTemplates.map((template) => (
+          <button key={template.label} type="button" onClick={() => onSelect(template)}>
+            {template.label}
+          </button>
+        ))}
+      </div>
+    </fieldset>
+  )
+}
+
+function MeetingDetailFields({ form, onUpdate, disabled = false }) {
   return (
     <>
       <label htmlFor="request-title">Title</label>
-      <input id="request-title" maxLength="255" required value={form.title} onChange={(event) => onUpdate('title', event.target.value)} placeholder="What do you need help with?" />
+      <input id="request-title" maxLength="255" required disabled={disabled} value={form.title} onChange={(event) => onUpdate('title', event.target.value)} placeholder="What do you need help with?" />
 
       <label htmlFor="request-topic">Topic <span>(optional)</span></label>
-      <input id="request-topic" maxLength="2000" value={form.topic} onChange={(event) => onUpdate('topic', event.target.value)} placeholder="Add a short topic" />
+      <input id="request-topic" maxLength="2000" disabled={disabled} value={form.topic} onChange={(event) => onUpdate('topic', event.target.value)} placeholder="Add a short topic" />
 
       <label htmlFor="request-description">Details <span>(optional)</span></label>
-      <textarea id="request-description" rows="4" maxLength="10000" value={form.description} onChange={(event) => onUpdate('description', event.target.value)} placeholder="Share any useful context" />
+      <textarea id="request-description" rows="4" maxLength="10000" disabled={disabled} value={form.description} onChange={(event) => onUpdate('description', event.target.value)} placeholder="Share any useful context" />
     </>
   )
 }
@@ -1320,18 +1376,60 @@ function openRequestPdf(request) {
   }, 250)
 }
 
-function downloadRequestWordDocument(request) {
-  const blob = new Blob(['\ufeff', getRequestExportHtml(request)], {
-    type: 'application/msword;charset=utf-8',
+async function downloadRequestWordDocument(request) {
+  const agenda = request.agenda || {}
+  const brief = request.documentBrief || {}
+  const briefActions = Array.isArray(brief.actions)
+    ? brief.actions.map((action) => [
+      action.task,
+      action.owner ? `Owner: ${action.owner}` : '',
+      action.dueDate ? `Due: ${action.dueDate}` : '',
+    ].filter(Boolean).join(' — '))
+    : []
+  const agendaItems = Array.isArray(agenda.items)
+    ? agenda.items.map((item) => [
+      item.title || 'Agenda item',
+      item.durationMinutes ? `${item.durationMinutes} min` : '',
+      item.details || '',
+    ].filter(Boolean).join(' — '))
+    : []
+  const agendaObjectives = Array.isArray(agenda.objectives) ? agenda.objectives : []
+  const agendaOutcomes = Array.isArray(agenda.outcomes) ? agenda.outcomes : []
+  const sections = [
+    { title: 'Details', paragraphs: [request.description || 'No additional details.'] },
+    ...(brief.executiveSummary ? [{
+      title: 'Executive summary',
+      paragraphs: [brief.executiveSummary],
+      emphasis: true,
+    }] : []),
+    ...(brief.keyPoints?.length ? [{ title: 'Key points', items: brief.keyPoints }] : []),
+    ...(brief.dates?.length ? [{ title: 'Important dates', items: brief.dates }] : []),
+    ...(briefActions.length ? [{ title: 'Follow-up actions', items: briefActions }] : []),
+    ...(brief.risks?.length ? [{ title: 'Risks and open questions', items: brief.risks }] : []),
+    ...(agendaObjectives.length ? [{ title: 'Objectives', items: agendaObjectives }] : []),
+    ...(agendaItems.length ? [{ title: agenda.title || 'Agenda items', numberedItems: agendaItems }] : []),
+    ...(agendaOutcomes.length ? [{ title: 'Expected outcomes', items: agendaOutcomes }] : []),
+  ]
+  const meetingTime = request.meetingStart
+    ? `${request.meetingStart.slice(0, 5)} (${request.meetingEnd?.slice(0, 5) || '60 min'})`
+    : 'Not scheduled'
+
+  await downloadWordDocument({
+    fileName: getRequestExportFileName(request.title),
+    title: request.title,
+    subtitle: `${request.type === 'MEETING' ? 'MEETING REQUEST' : 'DOCUMENT REQUEST'} · ${request.status}`,
+    sectionLabel: 'Request details',
+    metadata: [
+      { label: 'Submitted by', value: request.submittedBy || 'Not specified' },
+      { label: 'Department', value: request.department || 'Not specified' },
+      { label: 'Topic', value: request.topic || 'Not specified' },
+      { label: 'Meeting date', value: request.meetingDate ? formatDate(request.meetingDate) : 'Not scheduled' },
+      { label: 'Meeting time', value: meetingTime },
+      { label: 'Submitted', value: request.createdAt ? formatDate(request.createdAt) : 'Not recorded' },
+    ],
+    theme: 'teal',
+    sections,
   })
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = url
-  link.download = `${getRequestExportFileName(request.title)}.doc`
-  document.body.appendChild(link)
-  link.click()
-  link.remove()
-  window.setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
 function IntegrationPlaceholder({ icon, title, description, action, actionLabel }) {
