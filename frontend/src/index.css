@@ -376,11 +376,22 @@ button {
   box-shadow: 0 0 0 3px rgba(111, 130, 222, 0.12);
 }
 
+.input-icon-well {
+  display: grid;
+  flex: 0 0 52px;
+  align-self: stretch;
+  place-items: center;
+  border-right: 1px solid #e1e5ed;
+  border-radius: 8px 0 0 8px;
+  color: #78889a;
+  background: #f5f7fa;
+  transition: background 150ms ease, border-color 150ms ease;
+}
+
 .input-icon {
-  flex: 0 0 18px;
-  width: 18px;
-  height: 18px;
-  margin-left: 14px;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
   color: #9aa4b6;
 }
 
@@ -6181,4 +6192,3427 @@ body {
   .teacher-request-card-footer { align-items: flex-start; flex-direction: column; margin-right: -12px; margin-left: -12px; padding: 9px 12px; }
   .teacher-request-card-actions { width: 100%; }
   .teacher-request-card-actions button { flex: 1; padding-right: 7px; padding-left: 7px; }
+}
+
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 0 10px;
+  border: 1px solid currentColor;
+  border-radius: 9px;
+  color: #52657a;
+  background: transparent;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: background 150ms ease, color 150ms ease, border-color 150ms ease;
+}
+
+.theme-toggle svg {
+  width: 17px;
+  height: 17px;
+  flex: 0 0 auto;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.theme-toggle:hover {
+  background: rgba(22, 118, 109, 0.1);
+}
+
+.login-panel {
+  position: relative;
+}
+
+.login-panel > .theme-toggle {
+  position: absolute;
+  top: 20px;
+  right: 24px;
+}
+
+.workspace .theme-toggle {
+  width: 100%;
+  justify-content: flex-start;
+  margin: 10px 0;
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #d3dce6;
+}
+
+.workspace .theme-toggle:hover {
+  color: #f0d48f;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --university-navy: #142d4b;
+  --university-navy-deep: #0b1c2a;
+  --university-teal: #55c5b2;
+  --university-gold: #e5c478;
+  --university-ink: #e0e9f0;
+  --university-muted: #aab9c6;
+  --university-paper: #101923;
+  --university-surface: #192936;
+  --university-border: #344754;
+}
+
+:root[data-theme="dark"] body {
+  color: var(--university-ink);
+  background:
+    radial-gradient(ellipse at 10% 12%, rgba(35, 122, 112, 0.12), transparent 38%),
+    radial-gradient(ellipse at 92% 78%, rgba(201, 154, 69, 0.08), transparent 35%),
+    #101923;
+}
+
+:root[data-theme="dark"] .login-page {
+  color: var(--university-ink);
+  background: transparent;
+}
+
+:root[data-theme="dark"] .login-panel {
+  border-color: #2b3c4a;
+  background: #172531;
+}
+
+:root[data-theme="dark"] .login-panel .form-heading h2,
+:root[data-theme="dark"] .login-panel .login-form label {
+  color: #e2ebf1;
+}
+
+:root[data-theme="dark"] .login-panel .form-heading p,
+:root[data-theme="dark"] .login-panel .support-note,
+:root[data-theme="dark"] .login-panel .secure-note,
+:root[data-theme="dark"] .login-panel .login-footer {
+  color: #a8b7c3;
+}
+
+:root[data-theme="dark"] .login-panel .input-wrap {
+  border-color: #354958;
+  background: #101b26;
+}
+
+:root[data-theme="dark"] .login-panel .input-icon-well {
+  border-color: #354958;
+  color: #afbfcb;
+  background: #142330;
+}
+
+:root[data-theme="dark"] .login-panel .input-wrap input {
+  color: #e3edf3;
+  background: transparent;
+}
+
+:root[data-theme="dark"] .login-panel .input-wrap input::placeholder {
+  color: #8394a2;
+}
+
+:root[data-theme="dark"] .login-panel .theme-toggle {
+  border-color: #3a4d5a;
+  color: #d5e2e8;
+}
+
+:root[data-theme="dark"] .login-panel .submit-button {
+  color: #fff;
+  background: linear-gradient(110deg, #12364e, #16766d);
+}
+
+:root[data-theme="dark"] .workspace {
+  color: var(--university-ink);
+  background: #101923;
+}
+
+:root[data-theme="dark"] .workspace-sidebar {
+  background: linear-gradient(180deg, #132b3a, #0b1926);
+}
+
+:root[data-theme="dark"] .workspace-main {
+  background: #101923;
+}
+
+:root[data-theme="dark"] .workspace-topbar {
+  border-color: #2c3d4b;
+  background: rgba(20, 34, 46, 0.94);
+}
+
+:root[data-theme="dark"] .breadcrumb,
+:root[data-theme="dark"] .topbar-profile-copy span,
+:root[data-theme="dark"] .workspace-content .page-subtitle {
+  color: #9eafbc;
+}
+
+:root[data-theme="dark"] .breadcrumb strong,
+:root[data-theme="dark"] .topbar-profile-copy strong,
+:root[data-theme="dark"] .page-heading h1,
+:root[data-theme="dark"] .card-heading h2,
+:root[data-theme="dark"] .calendar-panel-heading h3,
+:root[data-theme="dark"] .documents-panel-heading h3,
+:root[data-theme="dark"] .document-result-heading h3,
+:root[data-theme="dark"] .document-brief-result section h4,
+:root[data-theme="dark"] .stat-card > strong,
+:root[data-theme="dark"] .modal-heading h2,
+:root[data-theme="dark"] .teacher-request-board-heading h3,
+:root[data-theme="dark"] .teacher-request-card-title h4,
+:root[data-theme="dark"] .teacher-request-stat strong {
+  color: #dfe9f0;
+}
+
+:root[data-theme="dark"] .workspace-content .card-heading p,
+:root[data-theme="dark"] .workspace-content .teacher-request-card-title > p,
+:root[data-theme="dark"] .workspace-content .teacher-request-card-meta > span,
+:root[data-theme="dark"] .workspace-content .teacher-request-empty p,
+:root[data-theme="dark"] .workspace-content .list-message,
+:root[data-theme="dark"] .workspace-content .empty-state,
+:root[data-theme="dark"] .workspace-content .teacher-request-stat small,
+:root[data-theme="dark"] .workspace-content .teacher-request-stat-note {
+  color: #a4b3bf;
+}
+
+:root[data-theme="dark"] .stat-card,
+:root[data-theme="dark"] .content-card,
+:root[data-theme="dark"] .integration-placeholder,
+:root[data-theme="dark"] .request-modal,
+:root[data-theme="dark"] .documents-panel,
+:root[data-theme="dark"] .calendar-panel,
+:root[data-theme="dark"] .document-brief-result,
+:root[data-theme="dark"] .welcome-card,
+:root[data-theme="dark"] .teacher-request-board,
+:root[data-theme="dark"] .teacher-request-card,
+:root[data-theme="dark"] .teacher-request-stat,
+:root[data-theme="dark"] .meeting-list-panel,
+:root[data-theme="dark"] .meeting-detail-panel,
+:root[data-theme="dark"] .access-management,
+:root[data-theme="dark"] .role-card,
+:root[data-theme="dark"] .permission-card {
+  border-color: #344754;
+  color: #dce6ed;
+  background: #192936;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+}
+
+:root[data-theme="dark"] .workspace-content :is(h1, h2, h3, h4, h5, strong, label, th, td, summary, dt, dd) {
+  color: #dce6ed;
+}
+
+:root[data-theme="dark"] .workspace-content :is(p, small, .teacher-request-total, .teacher-request-id) {
+  color: #aab8c4;
+}
+
+:root[data-theme="dark"] .workspace-content :is(input, select, textarea),
+:root[data-theme="dark"] .login-panel input {
+  border-color: #3b4e5c;
+  color: #e1eaf0;
+  background-color: #111e29;
+}
+
+:root[data-theme="dark"] .workspace-content :is(input, select, textarea)::placeholder,
+:root[data-theme="dark"] .login-panel input::placeholder {
+  color: #8596a3;
+}
+
+:root[data-theme="dark"] .workspace-content :is(input, select, textarea):focus,
+:root[data-theme="dark"] .login-panel input:focus {
+  border-color: #55c5b2;
+  box-shadow: 0 0 0 3px rgba(85, 197, 178, 0.16);
+}
+
+:root[data-theme="dark"] .request-method-picker label,
+:root[data-theme="dark"] .meeting-document-option,
+:root[data-theme="dark"] .meeting-quick-templates button,
+:root[data-theme="dark"] .meeting-slot-fields select,
+:root[data-theme="dark"] .schedule-recommendation-list,
+:root[data-theme="dark"] .schedule-recommendation-list > button,
+:root[data-theme="dark"] .meeting-plan-action,
+:root[data-theme="dark"] .document-file-picker,
+:root[data-theme="dark"] .teacher-request-toolbar,
+:root[data-theme="dark"] .teacher-request-search,
+:root[data-theme="dark"] .teacher-request-card-footer,
+:root[data-theme="dark"] .teacher-request-card-actions button {
+  border-color: #354a58;
+  color: #d5e0e8;
+  background: #142330;
+}
+
+:root[data-theme="dark"] .request-method-picker label.selected,
+:root[data-theme="dark"] .document-brief-choice:hover,
+:root[data-theme="dark"] .document-brief-choice.active,
+:root[data-theme="dark"] .teacher-request-filter:hover,
+:root[data-theme="dark"] .teacher-request-filter.active,
+:root[data-theme="dark"] .schedule-recommendation-list > button:hover,
+:root[data-theme="dark"] .schedule-recommendation-list > button.selected {
+  border-color: #527d79;
+  background: #1c383b;
+}
+
+:root[data-theme="dark"] .teacher-request-list,
+:root[data-theme="dark"] .teacher-request-card-footer,
+:root[data-theme="dark"] .document-brief-choice,
+:root[data-theme="dark"] .documents-intro {
+  background: #142330;
+}
+
+:root[data-theme="dark"] .teacher-request-details-disclosure,
+:root[data-theme="dark"] .teacher-request-toolbar,
+:root[data-theme="dark"] .teacher-request-card-footer,
+:root[data-theme="dark"] .teacher-request-card-meta {
+  border-color: #304451;
+}
+
+:root[data-theme="dark"] .teacher-request-card-actions .teacher-request-delete {
+  border-color: #674641;
+  color: #e1a79d;
+  background: #302321;
+}
+
+:root[data-theme="dark"] .teacher-request-card-main .status-pending {
+  border-color: #665536;
+  color: #e6c478;
+  background: #332c1e;
+}
+
+:root[data-theme="dark"] .teacher-request-card-main .status-approved {
+  border-color: #385b49;
+  color: #8bd1a2;
+  background: #1d3329;
+}
+
+:root[data-theme="dark"] .teacher-request-card-main .status-rejected {
+  border-color: #69433e;
+  color: #e49b90;
+  background: #382522;
+}
+
+:root[data-theme="dark"] .workspace-content .modal-close,
+:root[data-theme="dark"] .workspace-content .secondary-action,
+:root[data-theme="dark"] .workspace-content .icon-action,
+:root[data-theme="dark"] .workspace-content .teacher-request-filter {
+  border-color: #3a4e5b;
+  color: #d1dce4;
+  background: #172a37;
+}
+
+:root[data-theme="dark"] .workspace-content .secondary-action:hover:not(:disabled),
+:root[data-theme="dark"] .workspace-content .icon-action:hover,
+:root[data-theme="dark"] .workspace-content .teacher-request-card-actions .teacher-request-word:hover:not(:disabled) {
+  border-color: #527d79;
+  color: #83d4c3;
+  background: #1d393a;
+}
+
+:root[data-theme="dark"] .workspace-content .generated-agenda-preview,
+:root[data-theme="dark"] .workspace-content .meeting-document-summary,
+:root[data-theme="dark"] .workspace-content .document-brief-choice,
+:root[data-theme="dark"] .workspace-content .document-brief-icon,
+:root[data-theme="dark"] .workspace-content .empty-state-icon,
+:root[data-theme="dark"] .workspace-content .calendar-empty > span {
+  border-color: #354b56;
+  color: #a4d8c8;
+  background: #1a302f;
+}
+
+:root[data-theme="dark"] .workspace-content .request-grid th,
+:root[data-theme="dark"] .workspace-content .request-grid td,
+:root[data-theme="dark"] .workspace-content .request-grid tr {
+  border-color: #344754;
+  color: #d5e0e8;
+  background: #192936;
+}
+
+:root[data-theme="dark"] .workspace-content .calendar-event,
+:root[data-theme="dark"] .workspace-content .calendar-slot,
+:root[data-theme="dark"] .workspace-content .calendar-day {
+  border-color: #344754;
+  color: #dce6ed;
+  background: #192936;
+}
+
+:root[data-theme="dark"] .workspace-error {
+  border-color: #704b45;
+  color: #f0b4a8;
+  background: #342421;
+}
+
+:root[data-theme="dark"] .workspace-success {
+  border-color: #3e6657;
+  color: #a3d8b8;
+  background: #1b3028;
+}
+
+:root[data-theme="dark"] .form-error {
+  color: #f0b4a8;
+}
+
+:root[data-theme="dark"] .login-page button:focus-visible,
+:root[data-theme="dark"] .login-page input:focus-visible,
+:root[data-theme="dark"] .workspace button:focus-visible,
+:root[data-theme="dark"] .workspace a:focus-visible,
+:root[data-theme="dark"] .workspace input:focus-visible,
+:root[data-theme="dark"] .workspace select:focus-visible,
+:root[data-theme="dark"] .workspace textarea:focus-visible {
+  outline-color: rgba(85, 197, 178, 0.75);
+}
+
+@media (max-width: 700px) {
+  .login-panel > .theme-toggle {
+    top: 12px;
+    right: 12px;
+  }
+}
+
+.workspace-content.overview-content {
+  width: min(1360px, 100%);
+  padding: 46px clamp(28px, 3.8vw, 56px) 72px;
+}
+
+.overview-content .page-heading {
+  align-items: center;
+  min-height: 178px;
+  margin-bottom: 26px;
+  padding: 28px clamp(24px, 3vw, 38px);
+  border: 1px solid #dcebe5;
+  border-radius: 20px;
+  background:
+    radial-gradient(ellipse at 92% 8%, rgba(128, 198, 180, 0.22), transparent 34%),
+    linear-gradient(115deg, #f8fcfa 0%, #edf6f2 58%, #f0f3fa 100%);
+  box-shadow: 0 12px 30px rgba(30, 75, 67, 0.07);
+}
+
+.overview-content .page-eyebrow {
+  margin-bottom: 12px;
+  color: #388477;
+  font-size: 11px;
+  letter-spacing: 1.7px;
+}
+
+.overview-content .page-heading h1 {
+  color: #183c4c;
+  font-family: inherit;
+  font-size: clamp(32px, 3vw, 42px);
+  font-weight: 700;
+  letter-spacing: -1.2px;
+  line-height: 1.12;
+}
+
+.overview-content .page-subtitle {
+  margin-top: 10px;
+  color: #687d83;
+  font-size: 13px;
+}
+
+.overview-content .primary-action {
+  min-height: 46px;
+  padding: 0 18px;
+  border-radius: 11px;
+  background: linear-gradient(110deg, #176b70, #279b87);
+  box-shadow: 0 8px 18px rgba(31, 126, 111, 0.2);
+  font-size: 12px;
+}
+
+.overview-content .primary-action:hover:not(:disabled) {
+  background: linear-gradient(110deg, #125b64, #218a78);
+}
+
+.overview-content .stat-grid {
+  gap: 18px;
+  margin-bottom: 24px;
+}
+
+.overview-content .stat-card {
+  min-height: 160px;
+  padding: 22px 24px 20px 27px;
+  overflow: hidden;
+  border-radius: 16px;
+}
+
+.overview-content .stat-card::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: var(--overview-accent);
+  content: "";
+}
+
+.overview-content .stat-card:nth-child(1) {
+  --overview-accent: #50a89a;
+}
+
+.overview-content .stat-card:nth-child(2) {
+  --overview-accent: #d3a250;
+}
+
+.overview-content .stat-card:nth-child(3) {
+  --overview-accent: #68aa83;
+}
+
+.overview-content .stat-icon {
+  top: 20px;
+  right: 20px;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  font-size: 18px;
+}
+
+.overview-content .stat-label {
+  color: #647782;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.overview-content .stat-card > strong {
+  margin-top: 14px;
+  color: #1c4553;
+  font-family: inherit;
+  font-size: 38px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.overview-content .stat-card > small {
+  margin-top: 11px;
+  color: #819198;
+  font-size: 11px;
+}
+
+.overview-content .content-card {
+  border-radius: 18px;
+}
+
+.overview-content .card-heading {
+  padding: 23px 26px;
+}
+
+.overview-content .card-heading h2 {
+  color: #203d4a;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.overview-content .card-heading p {
+  margin-top: 6px;
+  color: #7c8e94;
+  font-size: 11px;
+}
+
+.overview-content .text-action {
+  padding: 9px 11px;
+  border-radius: 8px;
+  color: #237c70;
+  font-size: 11px;
+}
+
+.overview-content .text-action:hover {
+  color: #165f59;
+  background: #eaf4f0;
+}
+
+.overview-content .request-grid-scroll {
+  border: 0;
+  border-top: 1px solid #e8efeb;
+  border-radius: 0 0 18px 18px;
+  background: transparent;
+}
+
+.overview-content .request-grid th {
+  padding: 14px 18px;
+  color: #74888d;
+  font-size: 10px;
+}
+
+.overview-content .request-grid td {
+  padding: 17px 18px;
+  font-size: 11px;
+}
+
+.overview-content .request-grid .request-main > strong {
+  color: #314d59;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.overview-content .request-grid .request-main > span,
+.overview-content .request-grid .request-main > small,
+.overview-content .request-grid time,
+.overview-content .request-grid-muted,
+.overview-content .request-grid-meeting small {
+  font-size: 10px;
+}
+
+.overview-content .request-type-icon {
+  flex-basis: 40px;
+  width: 40px;
+  height: 40px;
+}
+
+.overview-content .status-badge {
+  padding: 6px 10px;
+  font-size: 9px;
+}
+
+.overview-content .request-grid-actions > button {
+  min-height: 32px;
+  padding: 0 9px;
+  border-radius: 7px;
+  font-size: 10px;
+}
+
+:root[data-theme="dark"] .overview-content .page-heading {
+  border-color: #35535a;
+  background:
+    radial-gradient(ellipse at 92% 8%, rgba(43, 123, 108, 0.2), transparent 34%),
+    linear-gradient(115deg, #172c38 0%, #1a333b 58%, #202e3d 100%);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.18);
+}
+
+:root[data-theme="dark"] .overview-content .page-eyebrow {
+  color: #79c7b5;
+}
+
+:root[data-theme="dark"] .overview-content .page-heading h1 {
+  color: #e5f0f2;
+}
+
+:root[data-theme="dark"] .overview-content .page-subtitle {
+  color: #aec0c7;
+}
+
+:root[data-theme="dark"] .overview-content .stat-label {
+  color: #b6c5cb;
+}
+
+:root[data-theme="dark"] .overview-content .stat-card > strong {
+  color: #e4eff0;
+}
+
+:root[data-theme="dark"] .overview-content .stat-card > small {
+  color: #9fb1b9;
+}
+
+:root[data-theme="dark"] .overview-content .card-heading h2,
+:root[data-theme="dark"] .overview-content .request-grid .request-main > strong {
+  color: #e0ebef;
+}
+
+:root[data-theme="dark"] .overview-content .card-heading p {
+  color: #a7b8c0;
+}
+
+:root[data-theme="dark"] .overview-content .text-action {
+  color: #8bd6c3;
+}
+
+:root[data-theme="dark"] .overview-content .text-action:hover {
+  color: #b0ecdb;
+  background: #203c3d;
+}
+
+:root[data-theme="dark"] .overview-content .request-grid-scroll {
+  border-top-color: #344b57;
+  background: transparent;
+}
+
+:root[data-theme="dark"] .overview-content .request-grid th {
+  border-color: #344b57;
+  color: #9fb3bc;
+  background: #203440;
+}
+
+:root[data-theme="dark"] .overview-content .request-grid td {
+  border-color: #304651;
+}
+
+:root[data-theme="dark"] .overview-content .request-grid tbody tr:hover td {
+  background: #203541;
+}
+
+:root[data-theme="dark"] .overview-content .request-grid-actions > .request-export-button {
+  border-color: #3a5662;
+  color: #d8e6e9;
+  background: #203541;
+}
+
+:root[data-theme="dark"] .overview-content .request-grid-actions > .request-export-button:hover:not(:disabled) {
+  border-color: #527d79;
+  color: #9de0ce;
+  background: #24413f;
+}
+
+@media (max-width: 820px) {
+  .workspace-content.overview-content {
+    padding: 34px 24px 52px;
+  }
+
+  .overview-content .page-heading {
+    min-height: 160px;
+  }
+}
+
+@media (max-width: 620px) {
+  .workspace-content.overview-content {
+    padding: 24px 16px 32px;
+  }
+
+  .overview-content .page-heading {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 18px;
+    min-height: 0;
+    padding: 22px;
+  }
+
+  .overview-content .page-heading h1 {
+    font-size: 30px;
+  }
+
+  .overview-content .primary-action {
+    align-self: flex-start;
+  }
+
+  .overview-content .stat-card {
+    min-height: 84px;
+    padding: 13px 15px;
+  }
+
+  .overview-content .stat-card::before {
+    inset: 0 auto 0 0;
+  }
+
+  .overview-content .stat-card > strong {
+    font-size: 30px;
+  }
+
+  .overview-content .card-heading {
+    padding: 18px;
+  }
+}
+
+.calendar-workspace {
+  gap: 20px;
+}
+
+.calendar-workspace .calendar-intro {
+  min-height: 160px;
+  padding: 28px 32px;
+  border-radius: 20px;
+  box-shadow: 0 12px 30px rgba(30, 75, 67, 0.07);
+}
+
+.calendar-workspace .calendar-kicker {
+  color: #388477;
+  font-size: 10px;
+  letter-spacing: 1.4px;
+}
+
+.calendar-workspace .calendar-intro h2 {
+  margin-bottom: 9px;
+  color: #183c4c;
+  font-size: clamp(24px, 2.8vw, 32px);
+  letter-spacing: -0.8px;
+}
+
+.calendar-workspace .calendar-intro > div > p:last-child {
+  color: #687d83;
+  font-size: 13px;
+}
+
+.calendar-workspace .calendar-columns {
+  gap: 18px;
+}
+
+.calendar-workspace .calendar-panel {
+  border-radius: 18px;
+}
+
+.calendar-workspace .calendar-panel-heading {
+  padding: 21px 23px;
+}
+
+.calendar-workspace .calendar-panel-heading h3 {
+  font-size: 16px;
+}
+
+.calendar-workspace .calendar-panel-heading .calendar-kicker {
+  font-size: 9px;
+}
+
+.calendar-workspace .calendar-timezone {
+  font-size: 10px;
+}
+
+.calendar-workspace .calendar-panel-description {
+  padding: 15px 23px 0;
+  font-size: 11px;
+}
+
+.calendar-workspace .calendar-event {
+  gap: 16px;
+  padding: 16px 21px;
+}
+
+.calendar-workspace .calendar-event-time {
+  flex-basis: 82px;
+  font-size: 11px;
+}
+
+.calendar-workspace .calendar-event-time span {
+  font-size: 10px;
+}
+
+.calendar-workspace .calendar-event-copy strong {
+  font-size: 12px;
+}
+
+.calendar-workspace .calendar-event-copy span {
+  font-size: 10px;
+}
+
+.calendar-workspace .calendar-slot {
+  min-height: 50px;
+  padding: 8px 22px;
+}
+
+.calendar-workspace .calendar-slot > span {
+  font-size: 12px;
+}
+
+.calendar-workspace .calendar-request-button {
+  font-size: 11px;
+}
+
+:root[data-theme="dark"] .calendar-workspace .calendar-intro {
+  border-color: #35535a;
+  background:
+    radial-gradient(ellipse at 92% 10%, rgba(43, 123, 108, 0.2), transparent 34%),
+    linear-gradient(112deg, #172c38 0%, #1a333b 58%, #202e3d 100%);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.18);
+}
+
+:root[data-theme="dark"] .calendar-workspace .calendar-kicker {
+  color: #79c7b5;
+}
+
+:root[data-theme="dark"] .calendar-workspace .calendar-intro h2 {
+  color: #e5f0f2;
+}
+
+:root[data-theme="dark"] .calendar-workspace .calendar-panel-heading h3 {
+  color: #e0ebef;
+}
+
+:root[data-theme="dark"] .calendar-workspace .calendar-intro > div > p:last-child {
+  color: #aec0c7;
+}
+
+:root[data-theme="dark"] .calendar-workspace .calendar-date-picker {
+  color: #b6c5cb;
+}
+
+:root[data-theme="dark"] .calendar-workspace .calendar-date-step,
+:root[data-theme="dark"] .calendar-workspace .calendar-today-button,
+:root[data-theme="dark"] .calendar-workspace .calendar-date-picker input {
+  border-color: #3a5662;
+  color: #d8e6e9;
+  background: #203541;
+}
+
+:root[data-theme="dark"] .calendar-workspace .calendar-date-step:hover,
+:root[data-theme="dark"] .calendar-workspace .calendar-today-button:hover {
+  border-color: #527d79;
+  background: #24413f;
+}
+
+:root[data-theme="dark"] .calendar-workspace .calendar-panel-heading {
+  border-bottom-color: #344b57;
+}
+
+:root[data-theme="dark"] .calendar-workspace .calendar-timezone {
+  color: #9fb3bc;
+}
+
+:root[data-theme="dark"] .calendar-workspace .calendar-event-time,
+:root[data-theme="dark"] .calendar-workspace .calendar-slot > span {
+  color: #8bd6c3;
+}
+
+:root[data-theme="dark"] .calendar-workspace .calendar-event-time span,
+:root[data-theme="dark"] .calendar-workspace .calendar-event-copy span {
+  color: #a7b8c0;
+}
+
+:root[data-theme="dark"] .calendar-workspace .calendar-event-copy strong {
+  color: #e0ebef;
+}
+
+:root[data-theme="dark"] .calendar-workspace .calendar-panel-description {
+  color: #a7b8c0;
+}
+
+:root[data-theme="dark"] .calendar-workspace .calendar-event,
+:root[data-theme="dark"] .calendar-workspace .calendar-slot {
+  border-bottom-color: #344b57;
+}
+
+:root[data-theme="dark"] .calendar-workspace .calendar-request-button {
+  color: #8bd6c3;
+}
+
+:root[data-theme="dark"] .calendar-workspace .calendar-request-button:hover {
+  color: #b0ecdb;
+}
+
+:root[data-theme="dark"] .calendar-workspace .access-icon-button {
+  border-color: #3a5662;
+  color: #d8e6e9;
+  background: #203541;
+}
+
+@media (max-width: 620px) {
+  .calendar-workspace .calendar-intro {
+    min-height: 0;
+    padding: 20px;
+  }
+
+  .calendar-workspace .calendar-intro h2 {
+    font-size: 24px;
+  }
+
+  .calendar-workspace .calendar-panel-heading {
+    padding: 16px;
+  }
+
+  .calendar-workspace .calendar-event {
+    gap: 9px;
+    padding: 12px;
+  }
+
+  .calendar-workspace .calendar-event-time {
+    flex-basis: 62px;
+  }
+
+  .calendar-workspace .calendar-slot {
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+}
+
+.documents-workspace {
+  gap: 20px;
+}
+
+.documents-workspace .documents-intro {
+  min-height: 160px;
+  padding: 28px 32px;
+  border-radius: 20px;
+  background:
+    radial-gradient(ellipse at 92% 10%, rgba(201, 154, 69, 0.17), transparent 34%),
+    linear-gradient(112deg, #fbfcf8 0%, #f1f5ee 100%);
+  box-shadow: 0 12px 30px rgba(30, 75, 67, 0.07);
+}
+
+.documents-workspace .documents-kicker {
+  font-size: 10px;
+  letter-spacing: 1.4px;
+}
+
+.documents-workspace .documents-intro h2 {
+  margin-bottom: 9px;
+  font-size: clamp(24px, 2.8vw, 32px);
+  letter-spacing: -0.8px;
+}
+
+.documents-workspace .documents-intro > div > p:last-child {
+  font-size: 13px;
+}
+
+.documents-workspace .documents-ai-mark {
+  width: 52px;
+  height: 52px;
+  border-radius: 15px;
+  font-size: 24px;
+}
+
+.documents-workspace .documents-columns {
+  gap: 18px;
+}
+
+.documents-workspace .documents-panel {
+  border-radius: 18px;
+}
+
+.documents-workspace .documents-panel-heading {
+  padding: 20px 23px;
+}
+
+.documents-workspace .documents-panel-heading .documents-kicker {
+  font-size: 9px;
+}
+
+.documents-workspace .documents-panel-heading h3 {
+  font-size: 15px;
+}
+
+.documents-workspace .documents-panel-heading > p:last-child {
+  font-size: 11px;
+}
+
+.documents-workspace .document-upload-form {
+  gap: 16px;
+  padding: 21px 22px 23px;
+}
+
+.documents-workspace .document-file-picker {
+  min-height: 120px;
+  border-radius: 13px;
+}
+
+.documents-workspace .document-file-picker strong {
+  font-size: 12px;
+}
+
+.documents-workspace .document-file-picker > span:last-of-type {
+  font-size: 11px;
+}
+
+.documents-workspace .document-context-field {
+  font-size: 12px;
+}
+
+.documents-workspace .document-context-field textarea {
+  min-height: 88px;
+  font-size: 12px;
+}
+
+.documents-workspace .document-privacy-note {
+  font-size: 10px;
+}
+
+.documents-workspace .document-submit-button {
+  min-height: 44px;
+  border-radius: 10px;
+  background: linear-gradient(110deg, #176b70, #279b87);
+  font-size: 12px;
+}
+
+.documents-workspace .document-submit-button:hover:not(:disabled) {
+  background: linear-gradient(110deg, #125b64, #218a78);
+}
+
+.documents-workspace .saved-briefs-panel {
+  min-height: 260px;
+}
+
+.documents-workspace .saved-briefs-heading {
+  align-items: center;
+}
+
+.documents-workspace .meeting-material-row {
+  min-height: 72px;
+  border-bottom-color: #e8efeb;
+  background: #fff;
+}
+
+.documents-workspace .meeting-material-row.active {
+  background: #f0f6f2;
+  box-shadow: inset 3px 0 #55988c;
+}
+
+.documents-workspace .meeting-material-row:not(.active):hover {
+  background: #f8faf8;
+}
+
+.documents-workspace .meeting-material-select {
+  gap: 12px;
+  padding: 14px 12px 14px 16px;
+}
+
+.documents-workspace .meeting-material-select strong {
+  font-size: 11px;
+}
+
+.documents-workspace .meeting-material-select small {
+  font-size: 10px;
+}
+
+.documents-workspace .meeting-material-actions {
+  padding-right: 16px;
+}
+
+.documents-workspace .meeting-material-actions .meeting-material-action {
+  min-height: 34px;
+  padding: 6px 12px;
+  border-radius: 8px;
+}
+
+:root[data-theme="dark"] .documents-workspace .documents-intro {
+  border-color: #4a5146;
+  background:
+    radial-gradient(ellipse at 92% 10%, rgba(166, 133, 63, 0.14), transparent 34%),
+    linear-gradient(112deg, #172c38 0%, #1a333b 58%, #202e3d 100%);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.18);
+}
+
+:root[data-theme="dark"] .documents-workspace .documents-kicker {
+  color: #83cdbb;
+}
+
+:root[data-theme="dark"] .documents-workspace .documents-intro h2 {
+  color: #e5f0f2;
+}
+
+:root[data-theme="dark"] .documents-workspace .documents-intro > div > p:last-child {
+  color: #aec0c7;
+}
+
+:root[data-theme="dark"] .documents-workspace .documents-ai-mark {
+  border-color: #526457;
+  color: #e6d39e;
+  background: #273c3b;
+}
+
+:root[data-theme="dark"] .documents-workspace .documents-panel-heading {
+  border-bottom-color: #344b57;
+}
+
+:root[data-theme="dark"] .documents-workspace .documents-panel-heading h3 {
+  color: #e0ebef;
+}
+
+:root[data-theme="dark"] .documents-workspace .documents-panel-heading > p:last-child {
+  color: #a7b8c0;
+}
+
+:root[data-theme="dark"] .documents-workspace .document-file-picker {
+  border-color: #45635e;
+  color: #bdcdd0;
+  background: #142a34;
+}
+
+:root[data-theme="dark"] .documents-workspace .document-file-picker:hover {
+  border-color: #65b5a2;
+  background: #19363a;
+}
+
+:root[data-theme="dark"] .documents-workspace .document-file-picker strong {
+  color: #dce8e9;
+}
+
+:root[data-theme="dark"] .documents-workspace .document-file-picker > span:last-of-type {
+  color: #a4b7bd;
+}
+
+:root[data-theme="dark"] .documents-workspace .document-upload-icon {
+  color: #9de0ce;
+  background: #203d3d;
+}
+
+:root[data-theme="dark"] .documents-workspace .document-context-field,
+:root[data-theme="dark"] .documents-workspace .document-context-field > span {
+  color: #d5e0e8;
+}
+
+:root[data-theme="dark"] .documents-workspace .document-context-field > span {
+  color: #9fb1b9;
+}
+
+:root[data-theme="dark"] .documents-workspace .meeting-material-row {
+  border-bottom-color: #344b57;
+  background: #192936;
+}
+
+:root[data-theme="dark"] .documents-workspace .meeting-material-row.active {
+  background: #1c383b;
+  box-shadow: inset 3px 0 #70c4b1;
+}
+
+:root[data-theme="dark"] .documents-workspace .meeting-material-row:not(.active):hover {
+  background: #203541;
+}
+
+:root[data-theme="dark"] .documents-workspace .meeting-material-select {
+  color: #dce6ed;
+}
+
+:root[data-theme="dark"] .documents-workspace .meeting-material-select strong {
+  color: #e0ebef;
+}
+
+:root[data-theme="dark"] .documents-workspace .meeting-material-select small {
+  color: #a7b8c0;
+}
+
+:root[data-theme="dark"] .documents-workspace .meeting-material-actions .meeting-material-action {
+  border-color: #3a5662;
+  color: #a5dece;
+  background: #203541;
+}
+
+:root[data-theme="dark"] .documents-workspace .meeting-material-actions .meeting-material-action:hover:not(:disabled) {
+  border-color: #527d79;
+  color: #c1eee0;
+  background: #24413f;
+}
+
+:root[data-theme="dark"] .documents-workspace .document-result-heading {
+  border-bottom-color: #344b57;
+}
+
+:root[data-theme="dark"] .documents-workspace .document-result-heading > div > span {
+  color: #a7b8c0;
+}
+
+:root[data-theme="dark"] .documents-workspace .document-brief-result section > p,
+:root[data-theme="dark"] .documents-workspace .document-brief-bullets,
+:root[data-theme="dark"] .documents-workspace .brief-action-list {
+  color: #bdcbd1;
+}
+
+:root[data-theme="dark"] .documents-workspace .brief-action-list li span {
+  color: #a7b8c0;
+}
+
+@media (max-width: 620px) {
+  .documents-workspace .documents-intro {
+    min-height: 0;
+    padding: 20px;
+  }
+
+  .documents-workspace .documents-intro h2 {
+    font-size: 24px;
+  }
+
+  .documents-workspace .documents-panel:not(.saved-briefs-panel) .documents-panel-heading {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .documents-workspace .documents-panel-heading {
+    padding: 16px;
+  }
+
+  .documents-workspace .document-upload-form {
+    padding: 15px;
+  }
+
+  .documents-workspace .document-result-heading {
+    flex-direction: column;
+  }
+
+  .documents-workspace .document-result-actions {
+    justify-content: flex-start;
+  }
+}
+
+.documents-workspace .meeting-materials-columns {
+  grid-template-columns: minmax(240px, 0.8fr) minmax(0, 1.3fr);
+  align-items: start;
+}
+
+.documents-workspace .meeting-intro-summary {
+  border-color: #dce8df;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.documents-workspace .meeting-intro-summary strong {
+  font-size: 19px;
+}
+
+.documents-workspace .meeting-list-count {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  font-size: 12px;
+}
+
+.documents-workspace .meeting-detail-panel {
+  gap: 16px;
+  padding: 20px;
+}
+
+.documents-workspace .meeting-detail-panel .document-result-heading {
+  padding-bottom: 17px;
+}
+
+.documents-workspace .meeting-document-section {
+  border-radius: 16px;
+}
+
+.documents-workspace .meeting-document-section .meeting-section-heading {
+  padding: 12px 16px;
+}
+
+.documents-workspace .meeting-section-heading p {
+  font-size: 9px;
+}
+
+.documents-workspace .meeting-document-section .meeting-section-heading h4 {
+  font-size: 15px;
+}
+
+.documents-workspace .meeting-document-section > .meeting-brief-details,
+.documents-workspace .meeting-document-section > .generated-agenda-preview {
+  padding: 16px 18px;
+}
+
+.documents-workspace .meeting-brief-details,
+.documents-workspace .meeting-document-section > .generated-agenda-preview {
+  gap: 12px;
+}
+
+.documents-workspace .meeting-brief-details section {
+  padding-top: 11px;
+}
+
+.documents-workspace .meeting-brief-details h4,
+.documents-workspace .generated-agenda-preview h4 {
+  font-size: 12px;
+}
+
+.documents-workspace .meeting-brief-details p,
+.documents-workspace .meeting-brief-details li,
+.documents-workspace .generated-agenda-preview li,
+.documents-workspace .generated-agenda-preview p {
+  font-size: 11px;
+  line-height: 1.65;
+}
+
+.documents-workspace .meeting-document-section.agenda-section .generated-agenda-preview > section {
+  padding: 10px 12px;
+}
+
+:root[data-theme="dark"] .documents-workspace .meeting-intro-summary {
+  border-color: #3a565a;
+  background: #203541;
+}
+
+:root[data-theme="dark"] .documents-workspace .meeting-intro-summary .documents-ai-mark {
+  border-color: #526457;
+  color: #e6d39e;
+  background: #273c3b;
+}
+
+:root[data-theme="dark"] .documents-workspace .meeting-intro-summary strong {
+  color: #e5f0f2;
+}
+
+:root[data-theme="dark"] .documents-workspace .meeting-intro-summary small {
+  color: #a7b8c0;
+}
+
+:root[data-theme="dark"] .documents-workspace .meeting-list-count {
+  color: #a5dece;
+  background: #203d3d;
+}
+
+:root[data-theme="dark"] .documents-workspace .meeting-detail-panel .document-result-heading {
+  border-bottom-color: #344b57;
+}
+
+:root[data-theme="dark"] .documents-workspace .meeting-detail-panel .documents-kicker {
+  color: #83cdbb;
+}
+
+:root[data-theme="dark"] .documents-workspace .meeting-document-section {
+  border-color: #3a525c;
+  background: #172a35;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+}
+
+:root[data-theme="dark"] .documents-workspace .meeting-document-section .meeting-section-heading {
+  border-bottom-color: #3a525c;
+}
+
+:root[data-theme="dark"] .documents-workspace .meeting-document-section.brief-section .meeting-section-heading {
+  background: linear-gradient(110deg, #203e3d 0%, #233943 58%, #253442 100%);
+}
+
+:root[data-theme="dark"] .documents-workspace .meeting-document-section.agenda-section .meeting-section-heading {
+  background: linear-gradient(110deg, #3a3528 0%, #34323a 58%, #2c3540 100%);
+}
+
+:root[data-theme="dark"] .documents-workspace .meeting-section-heading p {
+  color: #9fbab2;
+}
+
+:root[data-theme="dark"] .documents-workspace .meeting-document-section .meeting-section-heading h4 {
+  color: #e0ebef;
+}
+
+:root[data-theme="dark"] .documents-workspace .meeting-document-section > .meeting-brief-details,
+:root[data-theme="dark"] .documents-workspace .meeting-document-section > .generated-agenda-preview {
+  color: #c3d0d5;
+  background: #172a35;
+}
+
+:root[data-theme="dark"] .documents-workspace .meeting-brief-details section {
+  border-top-color: #344b57;
+}
+
+:root[data-theme="dark"] .documents-workspace .meeting-brief-details h4 {
+  color: #8bd6c3;
+}
+
+:root[data-theme="dark"] .documents-workspace .meeting-brief-details p,
+:root[data-theme="dark"] .documents-workspace .meeting-brief-details li,
+:root[data-theme="dark"] .documents-workspace .generated-agenda-preview li,
+:root[data-theme="dark"] .documents-workspace .generated-agenda-preview p {
+  color: #c3d0d5;
+}
+
+:root[data-theme="dark"] .documents-workspace .meeting-document-section.agenda-section .generated-agenda-preview {
+  background: #172a35;
+}
+
+:root[data-theme="dark"] .documents-workspace .meeting-document-section.agenda-section .generated-agenda-preview > strong,
+:root[data-theme="dark"] .documents-workspace .meeting-document-section.agenda-section .generated-agenda-preview h4 {
+  color: #e4ce93;
+}
+
+:root[data-theme="dark"] .documents-workspace .meeting-document-section.agenda-section .generated-agenda-preview > section {
+  border-color: #4a4b41;
+  background: #252f34;
+}
+
+:root[data-theme="dark"] .documents-workspace .meeting-detail-panel .standard-export-actions .status-badge {
+  border-color: #69433e;
+  color: #e49b90;
+  background: #382522;
+}
+
+:root[data-theme="dark"] .documents-workspace .meeting-detail-panel .standard-export-actions .meeting-material-action:not(.document-export-button) {
+  border-color: #3a5662;
+  color: #a5dece;
+  background: #203541;
+}
+
+:root[data-theme="dark"] .documents-workspace .meeting-detail-panel .standard-export-actions .meeting-material-action:not(.document-export-button):hover:not(:disabled) {
+  border-color: #527d79;
+  color: #c1eee0;
+  background: #24413f;
+}
+
+@media (max-width: 820px) {
+  .documents-workspace .meeting-materials-columns {
+    grid-template-columns: 1fr;
+  }
+}
+
+.workspace-content.approvals-content {
+  width: min(1360px, 100%);
+  padding: 46px clamp(28px, 3.8vw, 56px) 72px;
+}
+
+.approvals-content .request-page-card {
+  min-height: 360px;
+  border-radius: 18px;
+}
+
+.approvals-content .card-heading {
+  padding: 23px 26px;
+  background: linear-gradient(110deg, #f8fbf9 0%, #f0f6f3 100%);
+}
+
+.approvals-content .card-heading h2 {
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.approvals-content .card-heading p {
+  margin-top: 6px;
+  font-size: 11px;
+}
+
+.approvals-content .list-message,
+.approvals-content .empty-state {
+  min-height: 245px;
+  align-content: center;
+  gap: 12px;
+}
+
+.approvals-content .empty-state-icon {
+  width: 52px;
+  height: 52px;
+  margin-bottom: 3px;
+  border-radius: 16px;
+  font-size: 22px;
+}
+
+.approvals-content .empty-state strong {
+  font-size: 15px;
+}
+
+.approvals-content .empty-state > span:last-child {
+  max-width: 360px;
+  font-size: 12px;
+}
+
+.approvals-content .request-grid-scroll {
+  border: 0;
+  border-top: 1px solid #e8efeb;
+  border-radius: 0 0 18px 18px;
+  background: transparent;
+}
+
+.approvals-content .request-grid th {
+  padding: 14px 18px;
+  font-size: 10px;
+}
+
+.approvals-content .request-grid td {
+  padding: 17px 18px;
+  font-size: 11px;
+}
+
+.approvals-content .request-grid .request-main > strong {
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.access-management-header {
+  min-height: 150px;
+  padding: 30px 34px;
+  border-radius: 20px;
+}
+
+.access-heading-copy h2 {
+  font-size: clamp(28px, 3vw, 36px);
+}
+
+.access-card {
+  border-radius: 18px;
+}
+
+.access-card-heading {
+  min-height: 104px;
+  padding: 23px 27px;
+}
+
+.access-user-table th,
+.access-user-table td {
+  padding: 15px 20px;
+}
+
+.access-user-table tbody tr:hover {
+  background: #f2f7f5;
+}
+
+:root[data-theme="dark"] .workspace-content.approvals-content .request-page-card {
+  border-color: #344754;
+  background: #192936;
+}
+
+:root[data-theme="dark"] .approvals-content .card-heading {
+  border-bottom-color: #344b57;
+  background: linear-gradient(110deg, #1a303b 0%, #1c343e 100%);
+}
+
+:root[data-theme="dark"] .approvals-content .card-heading h2 {
+  color: #e0ebef;
+}
+
+:root[data-theme="dark"] .approvals-content .card-heading p {
+  color: #a7b8c0;
+}
+
+:root[data-theme="dark"] .approvals-content .empty-state-icon {
+  border: 1px solid #365850;
+  color: #9de0ce;
+  background: #203d3d;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.16);
+}
+
+:root[data-theme="dark"] .approvals-content .request-grid-scroll {
+  border-top-color: #344b57;
+}
+
+:root[data-theme="dark"] .approvals-content .request-grid th {
+  border-color: #344b57;
+  color: #9fb3bc;
+  background: #203440;
+}
+
+:root[data-theme="dark"] .approvals-content .request-grid td {
+  border-color: #304651;
+  color: #d5e0e8;
+}
+
+:root[data-theme="dark"] .approvals-content .request-grid .request-main > strong {
+  color: #e0ebef;
+}
+
+:root[data-theme="dark"] .approvals-content .request-grid-actions > .request-export-button,
+:root[data-theme="dark"] .approvals-content .reject-button {
+  border-color: #3a5662;
+  color: #d8e6e9;
+  background: #203541;
+}
+
+:root[data-theme="dark"] .approvals-content .request-grid-actions > .request-export-button:hover:not(:disabled),
+:root[data-theme="dark"] .approvals-content .reject-button:hover:not(:disabled) {
+  border-color: #527d79;
+  color: #9de0ce;
+  background: #24413f;
+}
+
+:root[data-theme="dark"] .approvals-content .approve-button {
+  border-color: #386451;
+  color: #a4dfbf;
+  background: #20392e;
+}
+
+:root[data-theme="dark"] .approvals-content .approve-button:hover:not(:disabled) {
+  background: #294a38;
+}
+
+:root[data-theme="dark"] .approvals-content .status-pending {
+  color: #e6c478;
+  background: #332c1e;
+}
+
+:root[data-theme="dark"] .access-management-header {
+  border-color: #35535a;
+  background:
+    radial-gradient(ellipse at 92% 10%, rgba(43, 123, 108, 0.2), transparent 34%),
+    linear-gradient(112deg, #172c38 0%, #1a333b 58%, #202e3d 100%);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.18);
+}
+
+:root[data-theme="dark"] .access-eyebrow,
+:root[data-theme="dark"] .access-section-kicker {
+  color: #83cdbb;
+}
+
+:root[data-theme="dark"] .access-heading-copy h2,
+:root[data-theme="dark"] .access-summary strong {
+  color: #e5f0f2;
+}
+
+:root[data-theme="dark"] .access-heading-copy > p:last-child,
+:root[data-theme="dark"] .access-summary span {
+  color: #aec0c7;
+}
+
+:root[data-theme="dark"] .access-summary > div {
+  border-left-color: #3a525c;
+}
+
+:root[data-theme="dark"] .access-tabs {
+  border-color: #344b57;
+  background: #142330;
+}
+
+:root[data-theme="dark"] .access-tab {
+  color: #a7b8c0;
+}
+
+:root[data-theme="dark"] .access-tab:hover:not(.active) {
+  color: #d6e8e7;
+  background: #203541;
+}
+
+:root[data-theme="dark"] .access-tab.active {
+  border: 1px solid #3c5a5b;
+  color: #a5dece;
+  background: #203d3d;
+  box-shadow: none;
+}
+
+:root[data-theme="dark"] .access-tab-index {
+  color: #8ca3a9;
+}
+
+:root[data-theme="dark"] .access-tab.active .access-tab-index {
+  color: #8bd6c3;
+}
+
+:root[data-theme="dark"] .access-card {
+  border-color: #344754;
+  background: #192936;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
+}
+
+:root[data-theme="dark"] .access-card-heading {
+  border-bottom-color: #344b57;
+  background: linear-gradient(110deg, #1a303b 0%, #192936 100%);
+}
+
+:root[data-theme="dark"] .access-card-heading h3,
+:root[data-theme="dark"] .role-card-heading h4,
+:root[data-theme="dark"] .permission-editor-heading h4,
+:root[data-theme="dark"] .permission-card-heading h5 {
+  color: #e0ebef;
+}
+
+:root[data-theme="dark"] .access-card-heading > div:first-child > p:last-child,
+:root[data-theme="dark"] .role-card-description,
+:root[data-theme="dark"] .permission-editor-heading p {
+  color: #a7b8c0;
+}
+
+:root[data-theme="dark"] .access-icon-button {
+  border-color: #3a5662;
+  color: #d8e6e9;
+  background: #203541;
+}
+
+:root[data-theme="dark"] .access-icon-button:hover:not(:disabled) {
+  border-color: #527d79;
+  color: #9de0ce;
+  background: #24413f;
+}
+
+:root[data-theme="dark"] .user-directory-toolbar {
+  border-bottom-color: #344b57;
+  background: #192936;
+}
+
+:root[data-theme="dark"] .user-search {
+  border-color: #3a5662;
+  color: #9fb3bc;
+  background: #142330;
+}
+
+:root[data-theme="dark"] .user-search input {
+  border: 0;
+  color: #e1eaf0;
+  background: transparent;
+}
+
+:root[data-theme="dark"] .user-search input::placeholder,
+:root[data-theme="dark"] .user-result-count {
+  color: #9fb3bc;
+}
+
+:root[data-theme="dark"] .access-user-table th {
+  border-bottom: 1px solid #344b57;
+  color: #9fb3bc;
+  background: #203440;
+}
+
+:root[data-theme="dark"] .access-user-table td {
+  border-top-color: #344b57;
+  color: #d5e0e8;
+}
+
+:root[data-theme="dark"] .access-user-table tbody tr:hover {
+  background: #203541;
+}
+
+:root[data-theme="dark"] .account-avatar,
+:root[data-theme="dark"] .permission-role-mark {
+  border-color: #3b5b59;
+  color: #a5dece;
+  background: #203d3d;
+}
+
+:root[data-theme="dark"] .account-copy strong {
+  color: #e0ebef;
+}
+
+:root[data-theme="dark"] .account-copy > span,
+:root[data-theme="dark"] .muted-value {
+  color: #a7b8c0;
+}
+
+:root[data-theme="dark"] .access-role-badge {
+  border-color: #3b5a56;
+  color: #a5dece;
+  background: #203a39;
+}
+
+:root[data-theme="dark"] .access-status {
+  color: #9bd5b0;
+}
+
+:root[data-theme="dark"] .access-status-inactive {
+  color: #e0a59b;
+}
+
+:root[data-theme="dark"] .access-row-actions button {
+  border-color: #3a5662;
+  color: #c7d7dc;
+  background: #203541;
+}
+
+:root[data-theme="dark"] .access-row-actions .access-edit-button:hover:not(:disabled) {
+  border-color: #527d79;
+  color: #a5dece;
+  background: #24413f;
+}
+
+:root[data-theme="dark"] .access-row-actions .access-delete-button {
+  border-color: #674641;
+  color: #e1a79d;
+  background: #302321;
+}
+
+:root[data-theme="dark"] .access-row-actions .access-delete-button:hover:not(:disabled) {
+  border-color: #87564f;
+  background: #3b2927;
+}
+
+:root[data-theme="dark"] .role-card {
+  border-color: #344b57;
+  background: linear-gradient(145deg, #1b303c 0%, #192936 100%);
+}
+
+:root[data-theme="dark"] .role-card:hover {
+  border-color: #527d79;
+}
+
+:root[data-theme="dark"] .role-kind,
+:root[data-theme="dark"] .role-assignment-count,
+:root[data-theme="dark"] .role-protected,
+:root[data-theme="dark"] .role-card-hint {
+  color: #a7b8c0;
+}
+
+:root[data-theme="dark"] .role-card-footer {
+  border-top-color: #344b57;
+}
+
+:root[data-theme="dark"] .role-assignment-count strong {
+  color: #d8e6e9;
+}
+
+:root[data-theme="dark"] .permission-role-list {
+  border-right-color: #344b57;
+  background: #142330;
+}
+
+:root[data-theme="dark"] .permission-role-list-title,
+:root[data-theme="dark"] .permission-editor-label,
+:root[data-theme="dark"] .permission-role-arrow {
+  color: #9fb3bc;
+}
+
+:root[data-theme="dark"] .permission-role-choice {
+  color: #b6c5cb;
+}
+
+:root[data-theme="dark"] .permission-role-choice:hover:not(.active) {
+  color: #d6e8e7;
+  background: #203541;
+}
+
+:root[data-theme="dark"] .permission-role-choice.active {
+  border-color: #3c5a5b;
+  color: #a5dece;
+  background: #203d3d;
+  box-shadow: none;
+}
+
+:root[data-theme="dark"] .permission-card {
+  border-color: #344b57;
+  background: #172a35;
+}
+
+:root[data-theme="dark"] .permission-card-heading {
+  border-bottom-color: #344b57;
+}
+
+:root[data-theme="dark"] .permission-card-heading span:not(.permission-resource-mark) {
+  color: #9fb3bc;
+}
+
+:root[data-theme="dark"] .permission-toggle-row {
+  border-bottom-color: #344b57;
+  color: #c3d0d5;
+}
+
+:root[data-theme="dark"] .permission-switch-track {
+  border-color: #52616a;
+  background: #34434c;
+}
+
+:root[data-theme="dark"] .permission-switch-track::after {
+  background: #dce6ed;
+}
+
+:root[data-theme="dark"] .permission-implementation-note {
+  border-color: #65583b;
+  color: #dfc987;
+  background: #302d23;
+}
+
+:root[data-theme="dark"] .access-empty {
+  color: #a7b8c0;
+}
+
+:root[data-theme="dark"] .access-empty-icon {
+  border: 1px solid #365850;
+  color: #9de0ce;
+  background: #203d3d;
+}
+
+:root[data-theme="dark"] .access-empty strong {
+  color: #e0ebef;
+}
+
+:root[data-theme="dark"] .access-empty > span:last-child {
+  color: #a7b8c0;
+}
+
+@media (max-width: 680px) {
+  .workspace-content.approvals-content {
+    padding: 28px 16px 36px;
+  }
+
+  .approvals-content .card-heading {
+    padding: 18px;
+  }
+
+  .approvals-content .request-page-card {
+    min-height: 330px;
+  }
+
+  .access-management-header {
+    min-height: 0;
+    padding: 22px;
+  }
+}
+
+.workspace-content.users-content {
+  width: min(1360px, 100%);
+  padding: 44px clamp(28px, 3.8vw, 56px) 72px;
+}
+
+.users-content .access-management {
+  gap: 20px;
+}
+
+.users-content .access-management-header {
+  position: relative;
+  min-height: 170px;
+  overflow: hidden;
+  padding: 32px 36px;
+  border-radius: 20px;
+}
+
+.users-content .access-management-header::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  border-radius: 20px 0 0 20px;
+  background: linear-gradient(180deg, #d6ad5e, #55aa96);
+  content: "";
+}
+
+.users-content .access-summary {
+  gap: 9px;
+}
+
+.users-content .access-summary > div {
+  min-width: 88px;
+  padding: 12px 15px;
+  border: 1px solid #e1ebe7;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.62);
+}
+
+.users-content .access-tabs {
+  padding: 6px;
+  border-radius: 14px;
+}
+
+.users-content .access-tab {
+  min-height: 43px;
+  padding: 0 17px;
+  border-radius: 9px;
+}
+
+.users-content .access-card {
+  border-radius: 18px;
+}
+
+.users-content .access-card-heading {
+  min-height: 108px;
+  padding: 24px 28px;
+}
+
+.users-content .user-directory-toolbar {
+  padding: 17px 26px;
+}
+
+.users-content .access-user-table th {
+  padding: 16px 22px;
+  font-size: 10px;
+  letter-spacing: 0.9px;
+}
+
+.users-content .access-user-table td {
+  padding: 17px 22px;
+}
+
+.users-content .account-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+}
+
+.users-content .account-copy strong {
+  font-size: 13px;
+}
+
+.users-content .account-copy > span {
+  font-size: 11px;
+}
+
+.users-content .access-role-badge {
+  min-height: 28px;
+  padding: 0 11px;
+  border-radius: 9px;
+}
+
+.users-content .access-status {
+  padding: 6px 9px;
+  border: 1px solid #d5e9df;
+  border-radius: 999px;
+  background: #f0f8f3;
+}
+
+.users-content .access-status-inactive {
+  border-color: #efddda;
+  background: #fcf3f1;
+}
+
+.users-content .access-row-actions button {
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 8px;
+}
+
+:root[data-theme="dark"] .users-content .access-management-header {
+  border-color: #3a6764;
+  background:
+    radial-gradient(ellipse at 86% 20%, rgba(55, 176, 145, 0.23), transparent 30%),
+    linear-gradient(112deg, #18333f 0%, #1d3b43 58%, #253b43 100%);
+}
+
+:root[data-theme="dark"] .users-content .access-management-header::before {
+  background: linear-gradient(180deg, #e0bd72, #69d0ad);
+}
+
+:root[data-theme="dark"] .users-content .access-summary > div {
+  border-color: #3d5a5e;
+  background: rgba(20, 42, 52, 0.74);
+}
+
+:root[data-theme="dark"] .users-content .access-summary strong {
+  color: #f0dfab;
+}
+
+:root[data-theme="dark"] .users-content .access-summary span {
+  color: #afc4c6;
+}
+
+:root[data-theme="dark"] .users-content .access-tabs {
+  border-color: #344b57;
+  background: #14232e;
+}
+
+:root[data-theme="dark"] .users-content .access-tab.active {
+  border-color: transparent;
+  color: #f2fffb;
+  background: linear-gradient(115deg, #196b68, #268b76);
+  box-shadow: 0 5px 14px rgba(17, 107, 96, 0.25);
+}
+
+:root[data-theme="dark"] .users-content .access-tab.active .access-tab-index {
+  color: #c4e8d9;
+}
+
+:root[data-theme="dark"] .users-content .access-card {
+  border-color: #36505b;
+  background: #192936;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+}
+
+:root[data-theme="dark"] .users-content .access-card-heading {
+  border-bottom-color: #344b57;
+  background: linear-gradient(110deg, #1d3540 0%, #1a303a 100%);
+}
+
+:root[data-theme="dark"] .users-content .user-directory-toolbar {
+  border-bottom-color: #344b57;
+  background: #192936;
+}
+
+:root[data-theme="dark"] .users-content .access-user-table th {
+  border-bottom-color: #3a535e;
+  color: #abc0c5;
+  background: #223b46;
+}
+
+:root[data-theme="dark"] .users-content .access-user-table td {
+  border-top-color: #344b57;
+  color: #d3e0e5;
+}
+
+:root[data-theme="dark"] .users-content .access-user-table tbody tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.018);
+}
+
+:root[data-theme="dark"] .users-content .access-user-table tbody tr:hover {
+  background: #203b43;
+}
+
+:root[data-theme="dark"] .users-content .account-copy strong {
+  color: #edf5f4;
+}
+
+:root[data-theme="dark"] .users-content .account-copy > span {
+  color: #a9bdc3;
+}
+
+:root[data-theme="dark"] .users-content .access-role-badge {
+  border-color: #3d655c;
+  color: #a9e3ce;
+  background: #1d3938;
+}
+
+:root[data-theme="dark"] .users-content .access-status {
+  border-color: #3b6554;
+  color: #a8e0bb;
+  background: #1c352d;
+}
+
+:root[data-theme="dark"] .users-content .access-status-inactive {
+  border-color: #694940;
+  color: #e7aaa0;
+  background: #382723;
+}
+
+:root[data-theme="dark"] .users-content .access-row-actions .access-edit-button {
+  border-color: #3d5d62;
+  color: #b7d6d5;
+  background: #203541;
+}
+
+:root[data-theme="dark"] .users-content .access-row-actions .access-edit-button:hover:not(:disabled) {
+  border-color: #55877d;
+  color: #b5ebd8;
+  background: #24413f;
+}
+
+:root[data-theme="dark"] .users-content .access-row-actions .access-delete-button {
+  border-color: #674641;
+  color: #e1a79d;
+  background: #302321;
+}
+
+:root[data-theme="dark"] .users-content .role-card {
+  border-color: #3b5660;
+  background: linear-gradient(145deg, #1c333e 0%, #192936 100%);
+}
+
+:root[data-theme="dark"] .users-content .role-card:hover {
+  border-color: #5a8b7e;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+}
+
+:root[data-theme="dark"] .users-content .permission-card {
+  border-color: #3b5660;
+  background: #1b303a;
+}
+
+:root[data-theme="dark"] .users-content .permission-role-list {
+  background: #14232e;
+}
+
+@media (max-width: 900px) {
+  .workspace-content.users-content {
+    padding-right: 24px;
+    padding-left: 24px;
+  }
+}
+
+@media (max-width: 680px) {
+  .workspace-content.users-content {
+    padding: 28px 16px 36px;
+  }
+
+  .users-content .access-management-header {
+    padding: 22px;
+  }
+
+  .users-content .access-summary {
+    width: 100%;
+  }
+
+  .users-content .access-summary > div {
+    flex: 1;
+    min-width: 0;
+    padding: 10px;
+  }
+
+  .users-content .access-tabs {
+    width: 100%;
+  }
+
+  .users-content .access-tab {
+    flex: 1;
+    justify-content: center;
+    padding: 0 10px;
+  }
+
+  .users-content .access-card-heading {
+    min-height: 0;
+    padding: 18px;
+  }
+}
+
+.approvals-content .approvals-card-heading {
+  min-height: 112px;
+  padding: 22px 28px;
+  background:
+    radial-gradient(ellipse at 86% 0%, rgba(120, 194, 170, 0.18), transparent 34%),
+    linear-gradient(110deg, #f8fbf9 0%, #edf5f2 100%);
+}
+
+.approval-heading-copy {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.approval-heading-icon {
+  display: grid;
+  flex: 0 0 48px;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border: 1px solid #d5e9df;
+  border-radius: 15px;
+  color: #438d78;
+  background: linear-gradient(145deg, #e5f3ec, #f1f5e5);
+  font-size: 21px;
+  font-weight: 750;
+}
+
+.approval-heading-kicker {
+  margin: 0 0 5px;
+  color: #43877e;
+  font-size: 9px;
+  font-weight: 750;
+  letter-spacing: 1.2px;
+}
+
+.approvals-content .approvals-card-heading h2 {
+  margin: 0;
+  color: #203d4a;
+  font-size: 17px;
+}
+
+.approvals-content .approvals-card-heading p:last-child {
+  margin-top: 5px;
+  color: #778a8e;
+}
+
+.approval-heading-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.approval-pending-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 35px;
+  padding: 0 12px;
+  border: 1px solid #e0e9e5;
+  border-radius: 999px;
+  color: #69817d;
+  background: rgba(255, 255, 255, 0.7);
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.approval-pending-count strong {
+  color: #348273;
+  font-size: 13px;
+}
+
+.approvals-content .empty-state {
+  position: relative;
+  min-height: 260px;
+  overflow: hidden;
+  background: radial-gradient(ellipse at center 40%, rgba(93, 162, 137, 0.08), transparent 47%);
+}
+
+.approvals-content .empty-state-icon {
+  width: 64px;
+  height: 64px;
+  border: 1px solid #d4e9de;
+  border-radius: 20px;
+  color: #398773;
+  background: linear-gradient(145deg, #e3f2e9, #f1f5e7);
+  box-shadow: 0 10px 24px rgba(57, 135, 115, 0.12);
+  font-size: 26px;
+}
+
+.approvals-content .empty-state strong {
+  color: #314d59;
+  font-size: 17px;
+}
+
+.approvals-content .empty-state > span:last-child {
+  color: #788c91;
+  font-size: 12px;
+}
+
+:root[data-theme="dark"] .approvals-content .approvals-card-heading {
+  border-bottom-color: #3a555e;
+  background:
+    radial-gradient(ellipse at 86% 0%, rgba(55, 176, 145, 0.2), transparent 34%),
+    linear-gradient(110deg, #1a303b 0%, #1d3841 100%);
+}
+
+:root[data-theme="dark"] .approval-heading-icon {
+  border-color: #3d665c;
+  color: #a4e0ca;
+  background: linear-gradient(145deg, #203e3c, #243943);
+}
+
+:root[data-theme="dark"] .approval-heading-kicker {
+  color: #83cdbb;
+}
+
+:root[data-theme="dark"] .approvals-content .approvals-card-heading h2 {
+  color: #e5f0f2;
+}
+
+:root[data-theme="dark"] .approvals-content .approvals-card-heading p:last-child {
+  color: #afc1c6;
+}
+
+:root[data-theme="dark"] .approval-pending-count {
+  border-color: #3c5a5e;
+  color: #b4c8ca;
+  background: #203541;
+}
+
+:root[data-theme="dark"] .approval-pending-count strong {
+  color: #9de0ce;
+}
+
+:root[data-theme="dark"] .approvals-content .empty-state {
+  background: radial-gradient(ellipse at center 40%, rgba(67, 151, 125, 0.13), transparent 48%);
+}
+
+:root[data-theme="dark"] .approvals-content .empty-state-icon {
+  border-color: #3c665b;
+  color: #a5e2ce;
+  background: linear-gradient(145deg, #20433f, #253b42);
+  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.2);
+}
+
+:root[data-theme="dark"] .approvals-content .empty-state strong {
+  color: #e5f0f2;
+}
+
+:root[data-theme="dark"] .approvals-content .empty-state > span:last-child {
+  color: #afc1c6;
+}
+
+@media (max-width: 620px) {
+  .approvals-content .approvals-card-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 16px;
+    padding: 19px;
+  }
+
+  .approval-heading-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .approvals-content .empty-state {
+    min-height: 230px;
+  }
+}
+
+.request-meeting-action {
+  min-height: 46px;
+  gap: 10px;
+  padding: 0 18px 0 12px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 12px;
+  color: #f7fffc;
+  background: linear-gradient(115deg, #155f70 0%, #227e78 56%, #2ba48b 100%);
+  box-shadow:
+    0 9px 22px rgba(27, 128, 112, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  font-size: 12px;
+  letter-spacing: 0.1px;
+  transition: box-shadow 150ms ease, filter 150ms ease, transform 150ms ease;
+}
+
+.request-meeting-action > span {
+  display: grid;
+  flex: 0 0 25px;
+  place-items: center;
+  width: 25px;
+  height: 25px;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 8px;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.12);
+  font-size: 18px;
+  line-height: 1;
+}
+
+.request-meeting-action:hover:not(:disabled) {
+  transform: translateY(-2px);
+  filter: saturate(1.12);
+  box-shadow:
+    0 13px 26px rgba(27, 128, 112, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.request-meeting-action:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.request-meeting-action:focus-visible {
+  outline: 3px solid rgba(91, 197, 170, 0.55);
+  outline-offset: 3px;
+}
+
+:root[data-theme="dark"] .request-meeting-action {
+  border-color: rgba(115, 210, 183, 0.35);
+  background: linear-gradient(115deg, #176b7c 0%, #22877c 56%, #32ae91 100%);
+  box-shadow:
+    0 9px 24px rgba(28, 147, 122, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16);
+}
+
+@media (max-width: 620px) {
+  .request-meeting-action {
+    min-height: 40px;
+    gap: 8px;
+    padding: 0 13px 0 9px;
+    font-size: 11px;
+  }
+
+  .request-meeting-action > span {
+    flex-basis: 22px;
+    width: 22px;
+    height: 22px;
+    border-radius: 7px;
+    font-size: 16px;
+  }
+}
+
+.meeting-request-modal {
+  width: min(100%, 620px);
+  padding: 27px;
+  border-radius: 20px;
+}
+
+.meeting-request-modal .modal-heading {
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e8eee9;
+}
+
+.meeting-request-modal .modal-heading .page-eyebrow {
+  margin-bottom: 7px;
+  color: #43877e;
+}
+
+.meeting-request-modal .modal-heading h2 {
+  color: #203d4a;
+  font-family: inherit;
+  font-size: 27px;
+  font-weight: 700;
+  letter-spacing: -0.6px;
+}
+
+.meeting-request-modal form {
+  scrollbar-color: #9ab6ae #f0f5f2;
+  scrollbar-width: thin;
+}
+
+.meeting-request-modal input:not([type="radio"]):not([type="file"]),
+.meeting-request-modal select,
+.meeting-request-modal textarea {
+  min-height: 43px;
+  border-radius: 10px;
+  font-size: 12px;
+}
+
+.meeting-request-modal textarea {
+  min-height: 92px;
+}
+
+.meeting-request-modal .meeting-slot-fields label,
+.meeting-request-modal .meeting-document-option > label:not(.meeting-document-picker) {
+  color: #435b64;
+  font-size: 12px;
+}
+
+.meeting-request-modal .request-method-picker legend,
+.meeting-request-modal .meeting-quick-templates legend {
+  color: #344f58;
+  font-size: 11px;
+}
+
+.meeting-request-modal .request-method-picker label {
+  border-radius: 11px;
+}
+
+.meeting-request-modal .request-method-picker strong {
+  font-size: 11px;
+}
+
+.meeting-request-modal .request-method-picker small {
+  font-size: 10px;
+}
+
+.meeting-request-modal .meeting-quick-templates button {
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 11px;
+}
+
+.meeting-request-modal .modal-actions .request-meeting-action {
+  min-width: 190px;
+  padding: 0 18px;
+  justify-content: center;
+}
+
+:root[data-theme="dark"] .meeting-request-modal {
+  border-color: #3a5662;
+  color: #dce6ed;
+  background: #152733;
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.48);
+}
+
+:root[data-theme="dark"] .meeting-request-modal .modal-heading {
+  border-bottom-color: #344b57;
+}
+
+:root[data-theme="dark"] .meeting-request-modal .modal-heading .page-eyebrow {
+  color: #83cdbb;
+}
+
+:root[data-theme="dark"] .meeting-request-modal .modal-heading h2 {
+  color: #e5f0f2;
+}
+
+:root[data-theme="dark"] .meeting-request-modal .modal-close {
+  border-color: #3a5662;
+  color: #c4d2d7;
+  background: #203541;
+}
+
+:root[data-theme="dark"] .meeting-request-modal .modal-close:hover {
+  border-color: #527d79;
+  color: #a5dece;
+  background: #24413f;
+}
+
+:root[data-theme="dark"] .meeting-request-modal label,
+:root[data-theme="dark"] .meeting-request-modal .request-method-picker legend,
+:root[data-theme="dark"] .meeting-request-modal .meeting-quick-templates legend {
+  color: #d1dfe3;
+}
+
+:root[data-theme="dark"] .meeting-request-modal label span,
+:root[data-theme="dark"] .meeting-request-modal .meeting-quick-templates legend span {
+  color: #9fb3bc;
+}
+
+:root[data-theme="dark"] .meeting-request-modal input:not([type="radio"]):not([type="file"]),
+:root[data-theme="dark"] .meeting-request-modal select,
+:root[data-theme="dark"] .meeting-request-modal textarea {
+  border-color: #3b5662;
+  color: #e1eaee;
+  background: #101f2a;
+  color-scheme: dark;
+}
+
+:root[data-theme="dark"] .meeting-request-modal input::placeholder,
+:root[data-theme="dark"] .meeting-request-modal textarea::placeholder {
+  color: #8fa3ad;
+}
+
+:root[data-theme="dark"] .meeting-request-modal input:focus,
+:root[data-theme="dark"] .meeting-request-modal select:focus,
+:root[data-theme="dark"] .meeting-request-modal textarea:focus {
+  border-color: #5bc4ad;
+  box-shadow: 0 0 0 3px rgba(91, 196, 173, 0.16);
+}
+
+:root[data-theme="dark"] .meeting-request-modal .request-method-picker label {
+  border-color: #354e5c;
+  color: #d5e0e8;
+  background: #192d39;
+}
+
+:root[data-theme="dark"] .meeting-request-modal .request-method-picker label.selected {
+  border-color: #4a8579;
+  background: #1c3c3b;
+}
+
+:root[data-theme="dark"] .meeting-request-modal .request-method-picker label > span,
+:root[data-theme="dark"] .meeting-request-modal .request-method-picker strong {
+  color: #dce8e9;
+}
+
+:root[data-theme="dark"] .meeting-request-modal .request-method-picker small {
+  color: #a7bbc2;
+}
+
+:root[data-theme="dark"] .meeting-request-modal .request-method-picker input[type="radio"] {
+  accent-color: #62cbb1;
+}
+
+:root[data-theme="dark"] .meeting-request-modal .meeting-quick-templates button {
+  border-color: #3a5662;
+  color: #c5d6db;
+  background: #192d39;
+}
+
+:root[data-theme="dark"] .meeting-request-modal .meeting-quick-templates button:hover:not(:disabled) {
+  border-color: #5b9284;
+  color: #b6ead9;
+  background: #203e3d;
+}
+
+:root[data-theme="dark"] .meeting-request-modal .meeting-document-option {
+  border-color: #3a5662;
+  background: #172a35;
+}
+
+:root[data-theme="dark"] .meeting-request-modal .meeting-document-picker {
+  border-color: #4c7069;
+  background: #132933;
+}
+
+:root[data-theme="dark"] .meeting-request-modal .meeting-document-picker strong {
+  color: #dce8e9;
+}
+
+:root[data-theme="dark"] .meeting-request-modal .meeting-document-picker small,
+:root[data-theme="dark"] .meeting-request-modal .meeting-document-privacy,
+:root[data-theme="dark"] .meeting-request-modal .meeting-plan-action small {
+  color: #a7bbc2;
+}
+
+:root[data-theme="dark"] .meeting-request-modal .meeting-document-summary {
+  border-left-color: #64b8a2;
+  background: #1c3738;
+}
+
+:root[data-theme="dark"] .meeting-request-modal .meeting-document-summary strong {
+  color: #dce8e9;
+}
+
+:root[data-theme="dark"] .meeting-request-modal .meeting-document-summary p {
+  color: #b4c6cb;
+}
+
+:root[data-theme="dark"] .meeting-request-modal .meeting-process-steps li {
+  border-color: #354e5c;
+  color: #a7bbc2;
+  background: #192d39;
+}
+
+:root[data-theme="dark"] .meeting-request-modal .meeting-process-steps li.current {
+  border-color: #4a8579;
+  background: #1c3c3b;
+}
+
+:root[data-theme="dark"] .meeting-request-modal .meeting-process-steps li.complete {
+  border-color: #3b6958;
+  color: #a9dfbf;
+  background: #1d382e;
+}
+
+:root[data-theme="dark"] .meeting-request-modal .meeting-process-steps strong {
+  color: #d5e0e8;
+}
+
+:root[data-theme="dark"] .meeting-request-modal .meeting-process-steps small {
+  color: #a7bbc2;
+}
+
+:root[data-theme="dark"] .meeting-request-modal .meeting-process-number {
+  color: #d5e0e8;
+  background: #344752;
+}
+
+:root[data-theme="dark"] .meeting-request-modal .meeting-brief-details section {
+  border-top-color: #344b57;
+}
+
+:root[data-theme="dark"] .meeting-request-modal .meeting-brief-details h4,
+:root[data-theme="dark"] .meeting-request-modal .generated-agenda-preview h4 {
+  color: #94d8c6;
+}
+
+:root[data-theme="dark"] .meeting-request-modal .meeting-brief-details p,
+:root[data-theme="dark"] .meeting-request-modal .meeting-brief-details li,
+:root[data-theme="dark"] .meeting-request-modal .generated-agenda-preview li,
+:root[data-theme="dark"] .meeting-request-modal .generated-agenda-preview p {
+  color: #c0cdd2;
+}
+
+:root[data-theme="dark"] .meeting-request-modal .meeting-plan-action,
+:root[data-theme="dark"] .meeting-request-modal .schedule-recommendation-list {
+  border-color: #3a5662;
+  background: #172a35;
+}
+
+:root[data-theme="dark"] .meeting-request-modal .meeting-plan-action .secondary-action,
+:root[data-theme="dark"] .meeting-request-modal .modal-actions .secondary-action {
+  border-color: #3a5662;
+  color: #d1dfe3;
+  background: #203541;
+}
+
+:root[data-theme="dark"] .meeting-request-modal .meeting-plan-action .secondary-action:hover:not(:disabled),
+:root[data-theme="dark"] .meeting-request-modal .modal-actions .secondary-action:hover:not(:disabled) {
+  border-color: #527d79;
+  color: #a5dece;
+  background: #24413f;
+}
+
+:root[data-theme="dark"] .meeting-request-modal .schedule-recommendation-list > strong {
+  color: #dce8e9;
+}
+
+:root[data-theme="dark"] .meeting-request-modal .schedule-recommendation-list > button {
+  border-color: #3a5662;
+  color: #c5d6db;
+  background: #192d39;
+}
+
+:root[data-theme="dark"] .meeting-request-modal .schedule-recommendation-list > button:hover,
+:root[data-theme="dark"] .meeting-request-modal .schedule-recommendation-list > button.selected {
+  border-color: #5b9284;
+  background: #203e3d;
+}
+
+:root[data-theme="dark"] .meeting-request-modal .schedule-recommendation-list > button > span {
+  color: #9de0ce;
+}
+
+:root[data-theme="dark"] .meeting-request-modal .schedule-recommendation-list small,
+:root[data-theme="dark"] .meeting-request-modal .meeting-availability-warning {
+  color: #b2c2c7;
+}
+
+:root[data-theme="dark"] .meeting-request-modal .generated-agenda-preview {
+  border-left-color: #65bda7;
+  color: #c3d0d5;
+  background: #1c3738;
+}
+
+:root[data-theme="dark"] .meeting-request-modal .generated-agenda-preview > strong,
+:root[data-theme="dark"] .meeting-request-modal .generated-agenda-preview > div {
+  color: #dce8e9;
+}
+
+:root[data-theme="dark"] .meeting-request-modal .generated-agenda-preview small {
+  color: #a7bbc2;
+}
+
+:root[data-theme="dark"] .meeting-request-modal .meeting-process-export {
+  border-color: #3a5662;
+  background: #172a35;
+}
+
+:root[data-theme="dark"] .meeting-request-modal .meeting-process-export strong {
+  color: #dce8e9;
+}
+
+:root[data-theme="dark"] .meeting-request-modal .meeting-process-export span,
+:root[data-theme="dark"] .meeting-request-modal .meeting-process-export small {
+  color: #a7bbc2;
+}
+
+:root[data-theme="dark"] .meeting-request-modal .modal-actions {
+  padding-top: 16px;
+  border-top: 1px solid #344b57;
+}
+
+@media (max-width: 620px) {
+  .meeting-request-modal {
+    padding: 20px;
+    border-radius: 17px;
+  }
+
+  .meeting-request-modal .modal-heading h2 {
+    font-size: 23px;
+  }
+
+  .meeting-request-modal .modal-actions {
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
+
+  .meeting-request-modal .modal-actions button {
+    width: 100%;
+  }
+}
+
+.meeting-request-modal .meeting-document-option {
+  gap: 12px;
+  padding: 16px;
+  border-color: #dce8e4;
+  border-radius: 14px;
+  background: #f7faf8;
+}
+
+.meeting-request-modal .meeting-process-steps {
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.meeting-request-modal .meeting-process-steps li {
+  min-height: 82px;
+  gap: 6px;
+  padding: 10px 9px;
+  border-color: #e0e9e5;
+  border-radius: 11px;
+  background: #fff;
+}
+
+.meeting-request-modal .meeting-process-steps li.current {
+  border-color: #78b9a7;
+  background: linear-gradient(145deg, #eef8f3, #f8faf2);
+}
+
+.meeting-request-modal .meeting-process-steps li.complete {
+  border-color: #a9d2bf;
+  color: #43836e;
+  background: #eff8f2;
+}
+
+.meeting-request-modal .meeting-process-number {
+  width: 22px;
+  height: 22px;
+  color: #597b78;
+  background: #e8f1ed;
+  font-size: 10px;
+}
+
+.meeting-request-modal .meeting-process-steps strong {
+  font-size: 9px;
+}
+
+.meeting-request-modal .meeting-process-steps small {
+  font-size: 8px;
+}
+
+.meeting-request-modal .meeting-document-picker {
+  position: relative;
+  min-height: 112px;
+  justify-items: center;
+  gap: 7px;
+  padding: 16px;
+  border-color: #9dc9bc;
+  border-radius: 13px;
+  background: linear-gradient(145deg, #fbfdfb, #f0f7f3);
+  text-align: center;
+}
+
+.meeting-request-modal .meeting-document-picker::before {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  margin-bottom: 2px;
+  border: 1px solid #d5e9df;
+  border-radius: 11px;
+  color: #398773;
+  background: #e3f2e9;
+  content: "↑";
+  font-size: 19px;
+  font-weight: 700;
+}
+
+.meeting-request-modal .meeting-document-picker strong {
+  font-size: 12px;
+}
+
+.meeting-request-modal .meeting-document-picker small {
+  font-size: 10px;
+}
+
+.meeting-request-modal .meeting-document-picker input[type="file"] {
+  width: 100%;
+  max-width: 300px;
+  margin-top: 2px;
+  padding: 0;
+  border: 0;
+  font-size: 10px;
+}
+
+.meeting-request-modal .meeting-document-picker input[type="file"]::file-selector-button {
+  min-height: 30px;
+  margin-right: 8px;
+  padding: 0 10px;
+  border: 1px solid #d4e4dc;
+  border-radius: 8px;
+  color: #3d7469;
+  background: #fff;
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.meeting-request-modal .document-agenda-button {
+  min-height: 39px;
+  padding: 0 14px;
+  border-color: #cfe2dc;
+  border-radius: 9px;
+  color: #28796e;
+  background: #edf6f1;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.meeting-request-modal .document-agenda-button:hover:not(:disabled) {
+  border-color: #a5cfc2;
+  background: #e4f1ea;
+}
+
+.meeting-request-modal .meeting-document-summary {
+  padding: 14px;
+  border-left-color: #55a293;
+  border-radius: 10px;
+  background: #edf6f2;
+}
+
+.meeting-request-modal .meeting-document-summary strong {
+  font-size: 11px;
+}
+
+:root[data-theme="dark"] .meeting-request-modal .meeting-document-option {
+  border-color: #3a5662;
+  background: #172a35;
+}
+
+:root[data-theme="dark"] .meeting-request-modal .meeting-process-steps li {
+  border-color: #354e5c;
+  background: #192d39;
+}
+
+:root[data-theme="dark"] .meeting-request-modal .meeting-process-steps li.current {
+  border-color: #579588;
+  background: linear-gradient(145deg, #1d3c3b, #203741);
+}
+
+:root[data-theme="dark"] .meeting-request-modal .meeting-process-steps li.complete {
+  border-color: #3b6958;
+  color: #a9dfbf;
+  background: #1d382e;
+}
+
+:root[data-theme="dark"] .meeting-request-modal .meeting-process-number {
+  color: #a7dccc;
+  background: #294441;
+}
+
+:root[data-theme="dark"] .meeting-request-modal .meeting-document-picker {
+  border-color: #4c7069;
+  background: linear-gradient(145deg, #142d35, #192f37);
+}
+
+:root[data-theme="dark"] .meeting-request-modal .meeting-document-picker::before {
+  border-color: #3d665c;
+  color: #a5e2ce;
+  background: #203d3d;
+}
+
+:root[data-theme="dark"] .meeting-request-modal .meeting-document-picker input[type="file"]::file-selector-button {
+  border-color: #3a5a5e;
+  color: #b6e4d7;
+  background: #203541;
+}
+
+:root[data-theme="dark"] .meeting-request-modal .meeting-document-picker input[type="file"]::file-selector-button:hover {
+  border-color: #5b9284;
+  background: #24413f;
+}
+
+:root[data-theme="dark"] .meeting-request-modal .document-agenda-button {
+  border-color: #3d645d;
+  color: #a5dece;
+  background: #203d3d;
+}
+
+:root[data-theme="dark"] .meeting-request-modal .document-agenda-button:hover:not(:disabled) {
+  border-color: #5b9284;
+  background: #244744;
+}
+
+:root[data-theme="dark"] .meeting-request-modal .meeting-document-summary {
+  border-left-color: #64b8a2;
+  background: #1c3738;
+}
+
+@media (max-width: 520px) {
+  .meeting-request-modal .meeting-process-steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.meeting-request-modal .meeting-document-option {
+  gap: 14px;
+  padding: 18px;
+  border-color: #d7e8df;
+  background: linear-gradient(155deg, #f8fbf9 0%, #f1f7f3 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.meeting-request-modal .meeting-process-steps {
+  gap: 9px;
+  margin-bottom: 2px;
+}
+
+.meeting-request-modal .meeting-process-steps li {
+  min-height: 88px;
+  gap: 7px;
+  padding: 11px 10px;
+  border-color: #d9e7e0;
+  border-radius: 12px;
+  box-shadow: 0 3px 10px rgba(34, 76, 61, 0.045);
+  transition: border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
+}
+
+.meeting-request-modal .meeting-process-steps li.current {
+  border-color: #63a994;
+  background: linear-gradient(145deg, #e8f6ef, #f5f8ee);
+  box-shadow: 0 5px 14px rgba(55, 132, 105, 0.12);
+}
+
+.meeting-request-modal .meeting-process-steps li.complete {
+  border-color: #a4d1bb;
+  background: linear-gradient(145deg, #edf8f0, #f6faf5);
+}
+
+.meeting-request-modal .meeting-process-number {
+  width: 25px;
+  height: 25px;
+  border: 1px solid rgba(64, 130, 107, 0.1);
+  border-radius: 9px;
+  color: #367866;
+  background: #e4f1e9;
+  font-size: 11px;
+}
+
+.meeting-request-modal .meeting-process-steps .current .meeting-process-number {
+  color: #fff;
+  background: linear-gradient(145deg, #348b78, #55aa85);
+  box-shadow: 0 3px 8px rgba(52, 139, 120, 0.22);
+}
+
+.meeting-request-modal .meeting-process-steps .complete .meeting-process-number {
+  border-color: transparent;
+  background: #4a9b79;
+}
+
+.meeting-request-modal .meeting-process-steps strong {
+  color: #36534a;
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+.meeting-request-modal .meeting-process-steps small {
+  color: #71877d;
+  font-size: 9px;
+  line-height: 1.3;
+}
+
+.meeting-request-modal .meeting-document-picker {
+  min-height: 142px;
+  gap: 8px;
+  padding: 18px;
+  border: 1px dashed #85b7a4;
+  border-radius: 15px;
+  background:
+    radial-gradient(ellipse at top, rgba(217, 240, 225, 0.65), transparent 68%),
+    linear-gradient(145deg, #fbfdfb, #f0f7f3);
+  transition: border-color 150ms ease, box-shadow 150ms ease, background 150ms ease;
+}
+
+.meeting-request-modal .meeting-document-picker:hover {
+  border-color: #4c9a82;
+  box-shadow: 0 6px 18px rgba(49, 126, 99, 0.1);
+}
+
+.meeting-request-modal .meeting-document-picker:focus-within {
+  border-color: #368b78;
+  box-shadow: 0 0 0 3px rgba(54, 139, 120, 0.14);
+}
+
+.meeting-request-modal .meeting-document-picker::before {
+  width: 42px;
+  height: 42px;
+  border-color: #cbe4d7;
+  border-radius: 13px;
+  color: #32816e;
+  background: linear-gradient(145deg, #e5f4e9, #dcefe5);
+  content: "↑";
+  font-size: 21px;
+}
+
+.meeting-request-modal .meeting-document-picker strong {
+  max-width: 100%;
+  color: #294d42;
+  font-size: 13px;
+}
+
+.meeting-request-modal .meeting-document-picker small {
+  color: #71877d;
+  font-size: 10px;
+}
+
+.meeting-request-modal .meeting-document-picker input[type="file"] {
+  max-width: 330px;
+  min-height: 39px;
+  margin-top: 4px;
+  padding: 4px;
+  border: 1px solid #d5e6dc;
+  border-radius: 10px;
+  color: #60766c;
+  background: rgba(255, 255, 255, 0.82);
+  font-size: 10px;
+}
+
+.meeting-request-modal .meeting-document-picker input[type="file"]::file-selector-button {
+  min-height: 29px;
+  margin-right: 10px;
+  padding: 0 12px;
+  border-color: #c7dfd2;
+  border-radius: 8px;
+  color: #347562;
+  background: #f5faf6;
+  font-size: 10px;
+  transition: border-color 150ms ease, background 150ms ease;
+}
+
+.meeting-request-modal .meeting-document-picker input[type="file"]::file-selector-button:hover {
+  border-color: #8dbca7;
+  background: #eaf5ee;
+}
+
+.meeting-request-modal .meeting-document-privacy {
+  padding: 9px 11px;
+  border-left: 3px solid #8bb9a5;
+  border-radius: 0 8px 8px 0;
+  color: #73877d;
+  background: #edf5f0;
+  font-size: 9px;
+}
+
+:root[data-theme="dark"] .meeting-request-modal .meeting-document-option {
+  border-color: #35534f;
+  background: linear-gradient(155deg, #192e38 0%, #172a35 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
+}
+
+:root[data-theme="dark"] .meeting-request-modal .meeting-process-steps li {
+  border-color: #354e5c;
+  background: #1a303a;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.12);
+}
+
+:root[data-theme="dark"] .meeting-request-modal .meeting-process-steps li.current {
+  border-color: #65b39c;
+  background: linear-gradient(145deg, #1d403d, #203740);
+  box-shadow: 0 5px 16px rgba(46, 147, 120, 0.16);
+}
+
+:root[data-theme="dark"] .meeting-request-modal .meeting-process-steps li.complete {
+  border-color: #477a64;
+  background: linear-gradient(145deg, #1c3c32, #1c3535);
+}
+
+:root[data-theme="dark"] .meeting-request-modal .meeting-process-number {
+  border-color: #3a5a55;
+  color: #a8dcca;
+  background: #294441;
+}
+
+:root[data-theme="dark"] .meeting-request-modal .meeting-process-steps .current .meeting-process-number {
+  color: #fff;
+  background: linear-gradient(145deg, #318b79, #50a887);
+}
+
+:root[data-theme="dark"] .meeting-request-modal .meeting-process-steps .complete .meeting-process-number {
+  background: #397f68;
+}
+
+:root[data-theme="dark"] .meeting-request-modal .meeting-process-steps strong {
+  color: #d9e9e4;
+}
+
+:root[data-theme="dark"] .meeting-request-modal .meeting-process-steps small {
+  color: #a3bbb2;
+}
+
+:root[data-theme="dark"] .meeting-request-modal .meeting-document-picker {
+  border-color: #528b78;
+  background:
+    radial-gradient(ellipse at top, rgba(41, 96, 78, 0.32), transparent 68%),
+    linear-gradient(145deg, #142d35, #192f37);
+}
+
+:root[data-theme="dark"] .meeting-request-modal .meeting-document-picker:hover {
+  border-color: #73c2a5;
+  box-shadow: 0 6px 18px rgba(26, 142, 110, 0.13);
+}
+
+:root[data-theme="dark"] .meeting-request-modal .meeting-document-picker:focus-within {
+  border-color: #7bd1b4;
+  box-shadow: 0 0 0 3px rgba(91, 196, 173, 0.17);
+}
+
+:root[data-theme="dark"] .meeting-request-modal .meeting-document-picker::before {
+  border-color: #3d665c;
+  color: #a5e2ce;
+  background: linear-gradient(145deg, #244944, #203d3d);
+}
+
+:root[data-theme="dark"] .meeting-request-modal .meeting-document-picker strong {
+  color: #e0efea;
+}
+
+:root[data-theme="dark"] .meeting-request-modal .meeting-document-picker small {
+  color: #a7bbc2;
+}
+
+:root[data-theme="dark"] .meeting-request-modal .meeting-document-picker input[type="file"] {
+  border-color: #3a5b5e;
+  color: #b7c9c8;
+  background: rgba(13, 30, 39, 0.72);
+}
+
+:root[data-theme="dark"] .meeting-request-modal .meeting-document-picker input[type="file"]::file-selector-button {
+  border-color: #426861;
+  color: #b6e4d7;
+  background: #203d3d;
+}
+
+:root[data-theme="dark"] .meeting-request-modal .meeting-document-picker input[type="file"]::file-selector-button:hover {
+  border-color: #69a58f;
+  background: #294c45;
+}
+
+:root[data-theme="dark"] .meeting-request-modal .meeting-document-privacy {
+  border-left-color: #5da88e;
+  color: #a7bbc2;
+  background: #1a3537;
+}
+
+.requests-content .request-page-card {
+  overflow: hidden;
+  min-height: 340px;
+  border-color: #dce8e4;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 12px 30px rgba(27, 61, 52, 0.06);
+}
+
+.requests-content .request-page-card > .card-heading {
+  min-height: 86px;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e6efea;
+  background: linear-gradient(110deg, #f8fbf9 0%, #eff6f2 100%);
+}
+
+.requests-content .request-page-card > .card-heading h2 {
+  color: #294d48;
+  font-size: 17px;
+  font-weight: 750;
+}
+
+.requests-content .request-page-card > .card-heading p {
+  margin-top: 5px;
+  color: #7d9189;
+  font-size: 11px;
+}
+
+.requests-content .request-grid-scroll {
+  border: 0;
+  border-radius: 0 0 18px 18px;
+  background: transparent;
+}
+
+.requests-content .request-grid {
+  min-width: 850px;
+}
+
+.requests-content .request-grid th {
+  padding: 13px 15px;
+  border-color: #e8efeb;
+  color: #748a81;
+  background: #f7faf8;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+}
+
+.requests-content .request-grid td {
+  padding: 15px;
+  border-color: #eaf0ed;
+  color: #60766d;
+  font-size: 10px;
+}
+
+.requests-content .request-grid tbody tr {
+  transition: background-color 140ms ease;
+}
+
+.requests-content .request-grid tbody tr:hover td {
+  background: #f5faf7;
+}
+
+.requests-content .request-main > strong {
+  color: #304d47;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.requests-content .request-main > span {
+  color: #80938b;
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.requests-content .request-grid-meeting,
+.requests-content .request-grid time,
+.requests-content .request-grid-muted {
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.requests-content .request-grid-meeting small {
+  color: #758b81;
+  font-size: 10px;
+}
+
+.requests-content .request-type-icon {
+  flex-basis: 40px;
+  width: 40px;
+  height: 40px;
+  border: 1px solid #dcebe3;
+  border-radius: 12px;
+  font-size: 18px;
+}
+
+.requests-content .request-type-icon.meeting {
+  color: #318578;
+  background: linear-gradient(145deg, #e5f4ed, #edf7f3);
+}
+
+.requests-content .request-type-icon.document {
+  color: #607ca0;
+  background: linear-gradient(145deg, #edf2f8, #f3f6fa);
+}
+
+.requests-content .request-grid-actions > button {
+  min-height: 31px;
+  padding: 0 10px;
+  border-color: #dce8e2;
+  border-radius: 8px;
+  color: #4a7064;
+  background: #fff;
+  font-size: 9px;
+  transition: border-color 140ms ease, color 140ms ease, background 140ms ease, transform 140ms ease;
+}
+
+.requests-content .request-grid-actions > button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: #9dc8b4;
+  color: #286d5c;
+  background: #eff8f2;
+}
+
+:root[data-theme="dark"] .requests-content .request-page-card {
+  border-color: #344d56;
+  background: #192936;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
+}
+
+:root[data-theme="dark"] .requests-content .request-page-card > .card-heading {
+  border-bottom-color: #344b57;
+  background: linear-gradient(110deg, #1a303b 0%, #1c353d 100%);
+}
+
+:root[data-theme="dark"] .requests-content .request-page-card > .card-heading h2 {
+  color: #e1ecec;
+}
+
+:root[data-theme="dark"] .requests-content .request-page-card > .card-heading p {
+  color: #a5b8bd;
+}
+
+:root[data-theme="dark"] .requests-content .request-grid th {
+  border-color: #344b57;
+  color: #a8c0bb;
+  background: #203640;
+}
+
+:root[data-theme="dark"] .requests-content .request-grid td {
+  border-color: #304651;
+  color: #d3e0e2;
+  background: #192c37;
+}
+
+:root[data-theme="dark"] .requests-content .request-grid tbody tr:hover td {
+  background: #203a41;
+}
+
+:root[data-theme="dark"] .requests-content .request-main > strong {
+  color: #e2edef;
+}
+
+:root[data-theme="dark"] .requests-content .request-main > span,
+:root[data-theme="dark"] .requests-content .request-grid-meeting small,
+:root[data-theme="dark"] .requests-content .request-grid time,
+:root[data-theme="dark"] .requests-content .request-grid-muted {
+  color: #a9bdc2;
+}
+
+:root[data-theme="dark"] .requests-content .request-type-icon {
+  border-color: #3b5d5c;
+}
+
+:root[data-theme="dark"] .requests-content .request-type-icon.meeting {
+  color: #a6e0d0;
+  background: linear-gradient(145deg, #203e3e, #1e383d);
+}
+
+:root[data-theme="dark"] .requests-content .request-type-icon.document {
+  color: #b6c8e0;
+  background: linear-gradient(145deg, #273849, #223442);
+}
+
+:root[data-theme="dark"] .requests-content .request-grid-actions > .request-export-button {
+  border-color: #3a5662;
+  color: #d6e5e5;
+  background: #203541;
+}
+
+:root[data-theme="dark"] .requests-content .request-grid-actions > .request-export-button:hover:not(:disabled) {
+  border-color: #5b9284;
+  color: #a9e4d3;
+  background: #244744;
 }

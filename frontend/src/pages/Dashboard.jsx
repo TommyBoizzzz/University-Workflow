@@ -10,6 +10,7 @@ import { getCurrentUser } from '../services/authService.js'
 import { getAvailability, getScheduleRecommendations } from '../services/calendarService.js'
 import { createDocumentBrief } from '../services/documentService.js'
 import { downloadWordDocument } from '../utils/wordExport.js'
+import ThemeToggle from '../components/ThemeToggle.jsx'
 import Agenda from './Agenda.jsx'
 import Calendar from './Calendar.jsx'
 import Documents from './Documents.jsx'
@@ -93,7 +94,7 @@ function formatDate(value) {
   }).format(new Date(`${String(value).slice(0, 10)}T12:00:00`))
 }
 
-function Dashboard({ user, onUserUpdate, onSignOut }) {
+function Dashboard({ user, theme, onToggleTheme, onUserUpdate, onSignOut }) {
   const [activePage, setActivePage] = useState(() => getPageFromPathname(window.location.pathname))
   const [requests, setRequests] = useState([])
   const [isLoading, setIsLoading] = useState(true)
@@ -471,6 +472,12 @@ function Dashboard({ user, onUserUpdate, onSignOut }) {
     calendar: 'Calendar',
     users: 'User management',
   }[activePage]
+  const contentVariant = {
+    overview: 'overview-content',
+    requests: 'requests-content',
+    approvals: 'approvals-content',
+    users: 'users-content',
+  }[activePage] || ''
 
   return (
     <div className="workspace">
@@ -503,6 +510,7 @@ function Dashboard({ user, onUserUpdate, onSignOut }) {
             <span className="help-mark">?</span>
             <span><strong>Need a hand?</strong><small>Contact your system administrator</small></span>
           </div>
+          <ThemeToggle theme={theme} onToggle={onToggleTheme} />
           <button className="sidebar-signout" type="button" onClick={onSignOut}>
             <span aria-hidden="true">↪</span> Sign out
           </button>
@@ -523,7 +531,7 @@ function Dashboard({ user, onUserUpdate, onSignOut }) {
           </div>
         </header>
 
-        <div className="workspace-content">
+        <div className={`workspace-content ${contentVariant}`}>
           <div className="page-heading">
             <div>
               <p className="page-eyebrow">{user.department || 'EDUFLOW'}</p>
@@ -535,7 +543,7 @@ function Dashboard({ user, onUserUpdate, onSignOut }) {
               </p>
             </div>
             {canCreateRequest && (
-              <button className="primary-action" type="button" onClick={() => openNewMeetingRequest()}>
+              <button className="primary-action request-meeting-action" type="button" onClick={() => openNewMeetingRequest()}>
                 <span aria-hidden="true">+</span> Request a meeting
               </button>
             )}
@@ -663,12 +671,19 @@ function Dashboard({ user, onUserUpdate, onSignOut }) {
 
           {activePage === 'approvals' && canReadApprovals && (
             <section className="content-card request-page-card">
-              <div className="card-heading">
-                <div>
-                  <h2>Requests awaiting your review</h2>
-                  <p>Review, approve, or reject pending submissions.</p>
+              <div className="card-heading approvals-card-heading">
+                <div className="approval-heading-copy">
+                  <span className="approval-heading-icon" aria-hidden="true">✓</span>
+                  <div>
+                    <p className="approval-heading-kicker">REVIEW CENTER</p>
+                    <h2>Requests awaiting your review</h2>
+                    <p>Review, approve, or reject pending submissions.</p>
+                  </div>
                 </div>
-                <button className="icon-action" type="button" onClick={loadRequests} aria-label="Refresh requests">↻</button>
+                <div className="approval-heading-actions">
+                  <span className="approval-pending-count"><strong>{pendingCount}</strong> pending</span>
+                  <button className="icon-action" type="button" onClick={loadRequests} aria-label="Refresh requests">↻</button>
+                </div>
               </div>
               <RequestList
                 requests={requests.filter((request) => request.status === 'PENDING')}
@@ -680,6 +695,7 @@ function Dashboard({ user, onUserUpdate, onSignOut }) {
                 onExport={handleExportRequest}
                 userId={user.id}
                 isSuperAdmin={user.role === 'SUPERADMIN'}
+                isApprovalQueue
                 workingRequestId={workingRequestId}
               />
             </section>
@@ -942,7 +958,7 @@ function Dashboard({ user, onUserUpdate, onSignOut }) {
               {error && <div className="form-error" role="alert">{error}</div>}
               <div className="modal-actions">
                 <button className="secondary-action" type="button" onClick={() => setIsCreateOpen(false)} disabled={isSubmitting}>Cancel</button>
-                <button className="primary-action" type="submit" disabled={isSubmitting || isDocumentAnalyzing || !form.meetingStart || (requestMethod === 'document' && (!documentBrief || !form.agenda))}>{isSubmitting ? 'Submitting...' : 'Submit meeting request'}</button>
+                <button className="primary-action request-meeting-action" type="submit" disabled={isSubmitting || isDocumentAnalyzing || !form.meetingStart || (requestMethod === 'document' && (!documentBrief || !form.agenda))}>{isSubmitting ? 'Submitting...' : 'Submit meeting request'}</button>
               </div>
             </form>
           </section>
@@ -1156,6 +1172,7 @@ function RequestList({
   onExport,
   userId,
   isSuperAdmin,
+  isApprovalQueue = false,
   workingRequestId,
 }) {
   if (isLoading) {
@@ -1165,9 +1182,13 @@ function RequestList({
   if (requests.length === 0) {
     return (
       <div className="empty-state">
-        <span className="empty-state-icon">↗</span>
-        <strong>No requests yet</strong>
-        <span>{isTeacher ? 'Your submissions will show here when you create a request.' : 'There are no requests to show right now.'}</span>
+        <span className="empty-state-icon">{isApprovalQueue ? '✓' : '↗'}</span>
+        <strong>{isApprovalQueue ? "You're all caught up" : 'No requests yet'}</strong>
+        <span>{isApprovalQueue
+          ? 'There are no pending submissions that need your attention.'
+          : isTeacher
+            ? 'Your submissions will show here when you create a request.'
+            : 'There are no requests to show right now.'}</span>
       </div>
     )
   }

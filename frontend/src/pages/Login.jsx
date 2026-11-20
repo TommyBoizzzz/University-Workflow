@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { loginUser } from '../services/authService.js'
+import ThemeToggle from '../components/ThemeToggle.jsx'
 
-function Login({ onLogin }) {
+function Login({ onLogin, theme, onToggleTheme }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -72,6 +73,7 @@ function Login({ onLogin }) {
       </section>
 
       <section className="login-panel">
+        <ThemeToggle theme={theme} onToggle={onToggleTheme} />
         <div className="login-form-wrap">
           <div className="mobile-brand brand-lockup">
             <img className="brand-mark" src="/brand-mark.svg" alt="" aria-hidden="true" />
@@ -87,10 +89,12 @@ function Login({ onLogin }) {
           <form className="login-form" onSubmit={handleSubmit}>
             <label htmlFor="email">University email</label>
             <div className="input-wrap">
-              <svg className="input-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <rect x="3.5" y="5" width="17" height="14" rx="2.5" stroke="currentColor" strokeWidth="1.6" />
-                <path d="m5 7 7 5.5L19 7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
+              <span className="input-icon-well" aria-hidden="true">
+                <svg className="input-icon" viewBox="0 0 24 24" fill="none">
+                  <rect x="3.5" y="5" width="17" height="14" rx="2.5" stroke="currentColor" strokeWidth="1.6" />
+                  <path d="m5 7 7 5.5L19 7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </span>
               <input
                 autoComplete="username"
                 id="email"
@@ -107,10 +111,12 @@ function Login({ onLogin }) {
               <label htmlFor="password">Password</label>
             </div>
             <div className="input-wrap">
-              <svg className="input-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <rect x="5" y="10" width="14" height="10" rx="2.2" stroke="currentColor" strokeWidth="1.6" />
-                <path d="M8 10V7a4 4 0 0 1 8 0v3m-4 4v2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-              </svg>
+              <span className="input-icon-well" aria-hidden="true">
+                <svg className="input-icon" viewBox="0 0 24 24" fill="none">
+                  <rect x="5" y="10" width="14" height="10" rx="2.2" stroke="currentColor" strokeWidth="1.6" />
+                  <path d="M8 10V7a4 4 0 0 1 8 0v3m-4 4v2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                </svg>
+              </span>
               <input
                 autoComplete="current-password"
                 id="password"
