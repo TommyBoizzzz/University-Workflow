@@ -1226,6 +1226,7 @@ function getRequestExportHtml(request) {
   return `<!doctype html>
 <html><head><meta charset="utf-8"><title>${escapeHtml(request.title)}</title>
 <style>
+*{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 body{font-family:Arial,sans-serif;color:#243247;line-height:1.35;margin:20px}
 h1{color:#1f3a5b;margin-bottom:2px}h2{font-size:17px;margin:0}
 .meta{color:#65758b;margin:0 0 10px}.details{width:100%;border-collapse:collapse}

@@ -120,18 +120,27 @@ function Meeting({
                   {selectedMeeting.sourceFilename ? ` · ${selectedMeeting.sourceFilename}` : ""}
                 </span>
               </div>
-              <div className="meeting-result-actions">
+              <div className="document-result-actions standard-export-actions">
                 <span className={`status-badge status-${selectedMeeting.status?.toLowerCase()}`}>
                   {selectedMeeting.status}
                 </span>
                 <button
-                  className="meeting-material-action export"
+                  className="meeting-material-action export document-export-button"
                   type="button"
                   onClick={() => onExport(selectedMeeting, "pdf")}
                   disabled={workingRequestId === selectedMeeting.id}
                 >
                   <span className="meeting-export-icon" aria-hidden="true">↓</span>
                   Export PDF
+                </button>
+                <button
+                  className="meeting-material-action export"
+                  type="button"
+                  onClick={() => onExport(selectedMeeting, "word")}
+                  disabled={workingRequestId === selectedMeeting.id}
+                >
+                  <span className="agenda-word-icon" aria-hidden="true">W</span>
+                  Export Word
                 </button>
                 {selectedMeeting.status === "PENDING"
                   && (isSuperAdmin || String(selectedMeeting.teacherId) === String(userId)) && (
