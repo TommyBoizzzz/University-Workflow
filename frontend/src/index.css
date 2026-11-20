@@ -7140,8 +7140,12 @@ body {
   font-size: 24px;
 }
 
+.documents-workspace {
+  gap: 14px;
+}
+
 .documents-workspace .documents-columns {
-  gap: 18px;
+  gap: 15px;
 }
 
 .documents-workspace .documents-panel {
@@ -7149,7 +7153,7 @@ body {
 }
 
 .documents-workspace .documents-panel-heading {
-  padding: 20px 23px;
+  padding: 18px 20px;
 }
 
 .documents-workspace .documents-panel-heading .documents-kicker {
@@ -7165,12 +7169,12 @@ body {
 }
 
 .documents-workspace .document-upload-form {
-  gap: 16px;
-  padding: 21px 22px 23px;
+  gap: 12px;
+  padding: 18px 20px 20px;
 }
 
 .documents-workspace .document-file-picker {
-  min-height: 120px;
+  min-height: 108px;
   border-radius: 13px;
 }
 
@@ -7187,7 +7191,7 @@ body {
 }
 
 .documents-workspace .document-context-field textarea {
-  min-height: 88px;
+  min-height: 76px;
   font-size: 12px;
 }
 
@@ -7207,7 +7211,14 @@ body {
 }
 
 .documents-workspace .saved-briefs-panel {
-  min-height: 260px;
+  min-height: 0;
+}
+
+.documents-workspace .saved-briefs-panel .calendar-empty,
+.documents-workspace > .calendar-empty {
+  min-height: 130px;
+  padding-top: 20px;
+  padding-bottom: 20px;
 }
 
 .documents-workspace .saved-briefs-heading {
@@ -7215,7 +7226,7 @@ body {
 }
 
 .documents-workspace .meeting-material-row {
-  min-height: 72px;
+  min-height: 64px;
   border-bottom-color: #e8efeb;
   background: #fff;
 }
@@ -7414,6 +7425,7 @@ body {
 .documents-workspace .meeting-materials-columns {
   grid-template-columns: minmax(240px, 0.8fr) minmax(0, 1.3fr);
   align-items: start;
+  gap: 15px;
 }
 
 .documents-workspace .meeting-intro-summary {
@@ -7433,12 +7445,12 @@ body {
 }
 
 .documents-workspace .meeting-detail-panel {
-  gap: 16px;
-  padding: 20px;
+  gap: 12px;
+  padding: 16px;
 }
 
 .documents-workspace .meeting-detail-panel .document-result-heading {
-  padding-bottom: 17px;
+  padding-bottom: 12px;
 }
 
 .documents-workspace .meeting-document-section {
@@ -7446,7 +7458,7 @@ body {
 }
 
 .documents-workspace .meeting-document-section .meeting-section-heading {
-  padding: 12px 16px;
+  padding: 10px 14px;
 }
 
 .documents-workspace .meeting-section-heading p {
@@ -9174,20 +9186,20 @@ body {
 }
 
 .meeting-request-modal .meeting-document-option {
-  gap: 14px;
-  padding: 18px;
+  gap: 11px;
+  padding: 14px;
   border-color: #d7e8df;
   background: linear-gradient(155deg, #f8fbf9 0%, #f1f7f3 100%);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 
 .meeting-request-modal .meeting-process-steps {
-  gap: 9px;
+  gap: 8px;
   margin-bottom: 2px;
 }
 
 .meeting-request-modal .meeting-process-steps li {
-  min-height: 88px;
+  min-height: 80px;
   gap: 7px;
   padding: 11px 10px;
   border-color: #d9e7e0;
@@ -9241,9 +9253,9 @@ body {
 }
 
 .meeting-request-modal .meeting-document-picker {
-  min-height: 142px;
-  gap: 8px;
-  padding: 18px;
+  min-height: 120px;
+  gap: 6px;
+  padding: 14px;
   border: 1px dashed #85b7a4;
   border-radius: 15px;
   background:
@@ -9263,8 +9275,8 @@ body {
 }
 
 .meeting-request-modal .meeting-document-picker::before {
-  width: 42px;
-  height: 42px;
+  width: 38px;
+  height: 38px;
   border-color: #cbe4d7;
   border-radius: 13px;
   color: #32816e;
@@ -9294,6 +9306,14 @@ body {
   color: #60766c;
   background: rgba(255, 255, 255, 0.82);
   font-size: 10px;
+}
+
+.meeting-request-modal .meeting-document-option > label:not(.meeting-document-picker) {
+  margin-top: 7px;
+}
+
+.meeting-request-modal .meeting-document-option > textarea {
+  min-height: 74px;
 }
 
 .meeting-request-modal .meeting-document-picker input[type="file"]::file-selector-button {
