@@ -896,6 +896,11 @@ button {
   line-height: 1;
 }
 
+.workspace-nav-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
 .nav-count {
   display: grid;
   place-items: center;

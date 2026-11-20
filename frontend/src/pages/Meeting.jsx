@@ -30,7 +30,7 @@ function Meeting({
     <div className="documents-workspace">
       <section className="documents-intro">
         <div>
-          <p className="documents-kicker">MEETING MATERIALS</p>
+          <p className="documents-kicker">Meeting</p>
           <h2>Documents and agendas for your meetings.</h2>
           <p>Select a meeting to view only its linked document brief and generated agenda.</p>
         </div>
@@ -41,11 +41,11 @@ function Meeting({
       </section>
 
       {isLoading ? (
-        <div className="access-loading"><span className="small-spinner" /> Loading meeting materials...</div>
+        <div className="access-loading"><span className="small-spinner" /> Loading Meeting...</div>
       ) : meetings.length === 0 ? (
         <div className="calendar-empty">
           <span aria-hidden="true">▤</span>
-          <strong>No meeting materials yet</strong>
+          <strong>No Meeting yet</strong>
           <p>Meetings with a linked document brief and agenda will appear here after submission.</p>
         </div>
       ) : (

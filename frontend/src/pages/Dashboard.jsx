@@ -18,8 +18,19 @@ import UserManagement from './UserManagement.jsx'
 
 const navigation = [
   { id: 'overview', path: '/', label: 'Overview', icon: '◫' },
-  { id: 'requests', path: '/requests', label: 'Requests', icon: '↗', permission: ['requests', 'read'] },
-  { id: 'fill-meeting', path: '/meetings', label: 'Meeting materials', icon: '▤', permission: ['requests', 'read'] },
+  {
+    id: 'requests',
+    path: '/requests',
+    label: 'Requests',
+    icon: (
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M5.5 2.75h6l3 3v11.5h-9z" />
+        <path d="M11.5 2.75v3h3M8 9h4M8 12h4M8 15h2" />
+      </svg>
+    ),
+    permission: ['requests', 'read'],
+  },
+  { id: 'fill-meeting', path: '/meetings', label: 'Meeting', icon: '▤', permission: ['requests', 'read'] },
   { id: 'agenda', path: '/agenda', label: 'Agenda', icon: '≡', permission: ['requests', 'read'] },
   { id: 'approvals', path: '/approvals', label: 'Approvals', icon: '✓', permission: ['approvals', 'read'] },
   { id: 'documents', path: '/documents', label: 'Documents', icon: '▤', permission: ['documents', 'read'] },
@@ -409,7 +420,7 @@ function Dashboard({ user, onUserUpdate, onSignOut }) {
   const pageTitle = {
     overview: 'Overview',
     requests: isTeacher ? 'My requests' : 'All requests',
-    'fill-meeting': 'Meeting materials',
+    'fill-meeting': 'Meeting',
     agenda: 'Agendas',
     approvals: 'Approval queue',
     documents: 'Documents',
