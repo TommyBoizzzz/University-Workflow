@@ -1,16 +1,44 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { createDocumentBrief, getDocumentBriefs } from "../services/documentService.js";
 import { downloadWordDocument } from "../utils/wordExport.js";
 
+const DOCUMENTS_PAGE_SIZE = 5;
+
 function Documents({ canCreateBrief }) {
   const [documents, setDocuments] = useState([]);
-  const [selectedDocument, setSelectedDocument] = useState(null);
+  const [selectedDocumentId, setSelectedDocumentId] = useState(null);
+  const [documentSearch, setDocumentSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
   const [file, setFile] = useState(null);
   const [topic, setTopic] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const filteredDocuments = useMemo(() => {
+    const query = documentSearch.trim().toLocaleLowerCase();
+    if (!query) return documents;
+    return documents.filter((document) => (
+      [document.title, document.sourceFilename, document.status]
+        .some((value) => String(value || "").toLocaleLowerCase().includes(query))
+    ));
+  }, [documents, documentSearch]);
+  const pageCount = Math.max(1, Math.ceil(filteredDocuments.length / DOCUMENTS_PAGE_SIZE));
+  const currentPageNumber = Math.min(currentPage, pageCount);
+  const visibleDocuments = useMemo(
+    () => filteredDocuments.slice(
+      (currentPageNumber - 1) * DOCUMENTS_PAGE_SIZE,
+      currentPageNumber * DOCUMENTS_PAGE_SIZE,
+    ),
+    [currentPageNumber, filteredDocuments],
+  );
+  const firstVisibleDocument = filteredDocuments.length
+    ? (currentPageNumber - 1) * DOCUMENTS_PAGE_SIZE + 1
+    : 0;
+  const lastVisibleDocument = Math.min(currentPageNumber * DOCUMENTS_PAGE_SIZE, filteredDocuments.length);
+  const selectedDocument = visibleDocuments.find((item) => item.id === selectedDocumentId)
+    || visibleDocuments[0]
+    || null;
 
   const refreshDocuments = useCallback(async () => {
     setError("");
@@ -18,11 +46,6 @@ function Documents({ canCreateBrief }) {
     try {
       const loadedDocuments = await getDocumentBriefs();
       setDocuments(loadedDocuments);
-      setSelectedDocument((current) => (
-        loadedDocuments.find((item) => item.id === current?.id) ||
-        loadedDocuments[0] ||
-        null
-      ));
     } catch (loadError) {
       setError(loadError.message || "Unable to load document briefs.");
     } finally {
@@ -36,7 +59,6 @@ function Documents({ canCreateBrief }) {
       .then((loadedDocuments) => {
         if (!active) return;
         setDocuments(loadedDocuments);
-        setSelectedDocument(loadedDocuments[0] || null);
       })
       .catch((loadError) => {
         if (active) setError(loadError.message || "Unable to load document briefs.");
@@ -64,7 +86,9 @@ function Documents({ canCreateBrief }) {
     try {
       const result = await createDocumentBrief({ file, topic });
       setDocuments((current) => [result.document, ...current]);
-      setSelectedDocument(result.document);
+      setSelectedDocumentId(result.document.id);
+      setDocumentSearch("");
+      setCurrentPage(1);
       setFile(null);
       setTopic("");
       formElement.reset();
@@ -162,33 +186,84 @@ function Documents({ canCreateBrief }) {
           ) : documents.length === 0 ? (
             <div className="calendar-empty"><span aria-hidden="true">▤</span><strong>No document briefs yet</strong><p>Generated briefs will appear here.</p></div>
           ) : (
-            <div className="document-brief-list">
-              {documents.map((document) => (
-                <div
-                  className={`meeting-material-row ${selectedDocument?.id === document.id ? "active" : ""}`}
-                  key={document.id}
-                >
-                  <button
-                    className="meeting-material-select"
-                    type="button"
-                    aria-pressed={selectedDocument?.id === document.id}
-                    onClick={() => setSelectedDocument(document)}
-                  >
-                    <span className="document-brief-icon" aria-hidden="true">▤</span>
-                    <span><strong>{document.title}</strong><small>{document.sourceFilename} · {document.status}</small></span>
-                  </button>
-                  <div className="meeting-material-actions">
-                    <button
-                      className="meeting-material-action export"
-                      type="button"
-                      onClick={() => handleExportDocument(document, "pdf")}
-                    >
-                      Export
-                    </button>
-                  </div>
+            <>
+              <div className="user-directory-toolbar documents-search-toolbar">
+                <label className="user-search" htmlFor="documents-search">
+                  <span aria-hidden="true">⌕</span>
+                  <input
+                    id="documents-search"
+                    type="search"
+                    value={documentSearch}
+                    onChange={(event) => {
+                      setDocumentSearch(event.target.value);
+                      setCurrentPage(1);
+                    }}
+                    placeholder="Search title, source, status..."
+                  />
+                </label>
+                <span className="user-result-count">
+                  Showing {firstVisibleDocument}–{lastVisibleDocument} of {filteredDocuments.length}
+                </span>
+              </div>
+              {filteredDocuments.length === 0 ? (
+                <div className="calendar-empty">
+                  <span aria-hidden="true">⌕</span>
+                  <strong>No matching briefs</strong>
+                  <p>Try a different title, source, or status.</p>
                 </div>
-              ))}
-            </div>
+              ) : (
+                <>
+                  <div className="document-brief-list">
+                    {visibleDocuments.map((document) => (
+                      <div
+                        className={`meeting-material-row ${selectedDocument?.id === document.id ? "active" : ""}`}
+                        key={document.id}
+                      >
+                        <button
+                          className="meeting-material-select"
+                          type="button"
+                          aria-pressed={selectedDocument?.id === document.id}
+                          onClick={() => setSelectedDocumentId(document.id)}
+                        >
+                          <span className="document-brief-icon" aria-hidden="true">▤</span>
+                          <span><strong>{document.title}</strong><small>{document.sourceFilename} · {document.status}</small></span>
+                        </button>
+                        <div className="meeting-material-actions">
+                          <button
+                            className="meeting-material-action export"
+                            type="button"
+                            onClick={() => handleExportDocument(document, "pdf")}
+                          >
+                            Export
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  {pageCount > 1 && (
+                    <nav className="documents-pagination" aria-label="Saved brief pages">
+                      <button
+                        className="documents-page-button"
+                        type="button"
+                        onClick={() => setCurrentPage(Math.max(1, currentPageNumber - 1))}
+                        disabled={currentPageNumber === 1}
+                      >
+                        Previous
+                      </button>
+                      <span>Page {currentPageNumber} of {pageCount}</span>
+                      <button
+                        className="documents-page-button"
+                        type="button"
+                        onClick={() => setCurrentPage(Math.min(pageCount, currentPageNumber + 1))}
+                        disabled={currentPageNumber === pageCount}
+                      >
+                        Next
+                      </button>
+                    </nav>
+                  )}
+                </>
+              )}
+            </>
           )}
         </section>
       </div>

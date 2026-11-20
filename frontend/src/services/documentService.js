@@ -14,3 +14,10 @@ export async function createDocumentBrief({ file, topic }) {
     body: formData
   });
 }
+
+export async function createManualMeetingBrief({ title, topic, description }) {
+  return apiRequest("/api/documents/meeting-brief", {
+    method: "POST",
+    body: JSON.stringify({ title, topic, description })
+  });
+}

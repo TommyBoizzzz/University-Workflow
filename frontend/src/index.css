@@ -7214,6 +7214,14 @@ body {
   min-height: 0;
 }
 
+.documents-workspace .documents-search-toolbar {
+  padding: 11px 16px;
+}
+
+.documents-workspace .documents-search-toolbar .user-search {
+  min-height: 36px;
+}
+
 .documents-workspace .saved-briefs-panel .calendar-empty,
 .documents-workspace > .calendar-empty {
   min-height: 130px;
@@ -7261,6 +7269,44 @@ body {
   min-height: 34px;
   padding: 6px 12px;
   border-radius: 8px;
+}
+
+.documents-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 16px;
+  border-top: 1px solid #e8efeb;
+}
+
+.documents-pagination span {
+  color: #71847d;
+  font-size: 10px;
+}
+
+.documents-page-button {
+  min-width: 76px;
+  min-height: 32px;
+  padding: 6px 10px;
+  border: 1px solid #dce7e1;
+  border-radius: 8px;
+  color: #426c63;
+  background: #fff;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.documents-page-button:hover:not(:disabled) {
+  border-color: #8eb6a7;
+  background: #f0f7f3;
+}
+
+.documents-page-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
 }
 
 :root[data-theme="dark"] .documents-workspace .documents-intro {
@@ -7372,6 +7418,25 @@ body {
   background: #24413f;
 }
 
+:root[data-theme="dark"] .documents-pagination {
+  border-top-color: #344b57;
+}
+
+:root[data-theme="dark"] .documents-pagination span {
+  color: #a7b8c0;
+}
+
+:root[data-theme="dark"] .documents-page-button {
+  border-color: #3a5662;
+  color: #c1eee0;
+  background: #203541;
+}
+
+:root[data-theme="dark"] .documents-page-button:hover:not(:disabled) {
+  border-color: #527d79;
+  background: #24413f;
+}
+
 :root[data-theme="dark"] .documents-workspace .document-result-heading {
   border-bottom-color: #344b57;
 }
@@ -7407,6 +7472,15 @@ body {
 
   .documents-workspace .documents-panel-heading {
     padding: 16px;
+  }
+
+  .documents-workspace .documents-search-toolbar {
+    align-items: stretch;
+    padding: 12px 14px;
+  }
+
+  .documents-workspace .documents-search-toolbar .user-search {
+    width: 100%;
   }
 
   .documents-workspace .document-upload-form {

@@ -1,5 +1,7 @@
 import { useState } from "react";
 
+const MEETING_PAGE_SIZE = 6;
+
 function formatMeetingDate(value) {
   if (!value) return "Date not selected";
   return new Intl.DateTimeFormat(undefined, {
@@ -19,12 +21,36 @@ function Meeting({
   isSuperAdmin
 }) {
   const [selectedRequestId, setSelectedRequestId] = useState(null);
+  const [meetingSearch, setMeetingSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
   const meetings = requests.filter((request) => (
     request.type === "MEETING" &&
     request.documentBrief &&
     request.agenda
   ));
-  const selectedMeeting = meetings.find((request) => request.id === selectedRequestId) || meetings[0];
+  const query = meetingSearch.trim().toLocaleLowerCase();
+  const filteredMeetings = meetings.filter((meeting) => (
+    [
+      meeting.title,
+      meeting.sourceFilename,
+      meeting.status,
+      formatMeetingDate(meeting.meetingDate),
+      meeting.documentBrief.title,
+      meeting.agenda.title,
+    ].some((value) => String(value || "").toLocaleLowerCase().includes(query))
+  ));
+  const pageCount = Math.max(1, Math.ceil(filteredMeetings.length / MEETING_PAGE_SIZE));
+  const currentPageNumber = Math.min(currentPage, pageCount);
+  const visibleMeetings = filteredMeetings.slice(
+    (currentPageNumber - 1) * MEETING_PAGE_SIZE,
+    currentPageNumber * MEETING_PAGE_SIZE,
+  );
+  const firstVisibleMeeting = filteredMeetings.length
+    ? (currentPageNumber - 1) * MEETING_PAGE_SIZE + 1
+    : 0;
+  const lastVisibleMeeting = Math.min(currentPageNumber * MEETING_PAGE_SIZE, filteredMeetings.length);
+  const selectedMeeting = visibleMeetings.find((request) => request.id === selectedRequestId)
+    || visibleMeetings[0];
 
   return (
     <div className="documents-workspace">
@@ -58,56 +84,106 @@ function Meeting({
               </div>
               <span className="meeting-list-count">{meetings.length}</span>
             </div>
-            <div className="document-brief-list">
-              {meetings.map((meeting) => {
-                const isWorking = workingRequestId === meeting.id;
-                const canDelete = meeting.status === "PENDING"
-                  && (isSuperAdmin || String(meeting.teacherId) === String(userId));
-
-                return (
-                  <div
-                    className={`meeting-material-row ${selectedMeeting?.id === meeting.id ? "active" : ""}`}
-                    key={meeting.id}
-                  >
-                    <button
-                      className="meeting-material-select"
-                      type="button"
-                      aria-pressed={selectedMeeting?.id === meeting.id}
-                      onClick={() => setSelectedRequestId(meeting.id)}
-                    >
-                      <span className="document-brief-icon" aria-hidden="true">▤</span>
-                      <span>
-                        <strong>{meeting.title}</strong>
-                        <small>{formatMeetingDate(meeting.meetingDate)} · {meeting.status}</small>
-                      </span>
-                    </button>
-                    <div className="meeting-material-actions">
-                      <button
-                        className="meeting-material-action export"
-                        type="button"
-                        onClick={() => onExport(meeting, "pdf")}
-                        disabled={isWorking}
-                      >
-                        Export
-                      </button>
-                      {canDelete && (
-                        <button
-                          className="meeting-material-action delete"
-                          type="button"
-                          onClick={() => onDelete(meeting)}
-                          disabled={isWorking}
-                        >
-                          Delete
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
+            <div className="user-directory-toolbar documents-search-toolbar">
+              <label className="user-search" htmlFor="meeting-search">
+                <span aria-hidden="true">⌕</span>
+                <input
+                  id="meeting-search"
+                  type="search"
+                  value={meetingSearch}
+                  onChange={(event) => {
+                    setMeetingSearch(event.target.value);
+                    setCurrentPage(1);
+                  }}
+                  placeholder="Search title, date, source, status..."
+                />
+              </label>
+              <span className="user-result-count">
+                Showing {firstVisibleMeeting}–{lastVisibleMeeting} of {filteredMeetings.length}
+              </span>
             </div>
+            {filteredMeetings.length === 0 ? (
+              <div className="calendar-empty">
+                <span aria-hidden="true">⌕</span>
+                <strong>No matching meetings</strong>
+                <p>Try a different title, date, source, or status.</p>
+              </div>
+            ) : (
+              <>
+                <div className="document-brief-list">
+                  {visibleMeetings.map((meeting) => {
+                    const isWorking = workingRequestId === meeting.id;
+                    const canDelete = meeting.status === "PENDING"
+                      && (isSuperAdmin || String(meeting.teacherId) === String(userId));
+
+                    return (
+                      <div
+                        className={`meeting-material-row ${selectedMeeting?.id === meeting.id ? "active" : ""}`}
+                        key={meeting.id}
+                      >
+                        <button
+                          className="meeting-material-select"
+                          type="button"
+                          aria-pressed={selectedMeeting?.id === meeting.id}
+                          onClick={() => setSelectedRequestId(meeting.id)}
+                        >
+                          <span className="document-brief-icon" aria-hidden="true">▤</span>
+                          <span>
+                            <strong>{meeting.title}</strong>
+                            <small>{formatMeetingDate(meeting.meetingDate)} · {meeting.status}</small>
+                          </span>
+                        </button>
+                        <div className="meeting-material-actions">
+                          <button
+                            className="meeting-material-action export"
+                            type="button"
+                            onClick={() => onExport(meeting, "pdf")}
+                            disabled={isWorking}
+                          >
+                            Export
+                          </button>
+                          {canDelete && (
+                            <button
+                              className="meeting-material-action delete"
+                              type="button"
+                              onClick={() => onDelete(meeting)}
+                              disabled={isWorking}
+                            >
+                              Delete
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                {pageCount > 1 && (
+                  <nav className="documents-pagination" aria-label="Meeting pages">
+                    <button
+                      className="documents-page-button"
+                      type="button"
+                      onClick={() => setCurrentPage(Math.max(1, currentPageNumber - 1))}
+                      disabled={currentPageNumber === 1}
+                    >
+                      Previous
+                    </button>
+                    <span>Page {currentPageNumber} of {pageCount}</span>
+                    <button
+                      className="documents-page-button"
+                      type="button"
+                      onClick={() => setCurrentPage(Math.min(pageCount, currentPageNumber + 1))}
+                      disabled={currentPageNumber === pageCount}
+                    >
+                      Next
+                    </button>
+                  </nav>
+                )}
+              </>
+            )}
           </section>
 
-          <article className="document-brief-result meeting-detail-panel">
+          {selectedMeeting && (
+            <article className="document-brief-result meeting-detail-panel">
             <div className="document-result-heading">
               <div>
                 <p className="documents-kicker">MEETING</p>
@@ -175,7 +251,8 @@ function Meeting({
               </div>
               <AgendaDetails agenda={selectedMeeting.agenda} />
             </section>
-          </article>
+            </article>
+          )}
         </div>
       )}
     </div>

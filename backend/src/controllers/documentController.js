@@ -1,6 +1,9 @@
 import path from "node:path";
 import pool from "../config/database.js";
-import { generateDocumentBrief } from "../integrations/gemini.js";
+import {
+  generateDocumentBrief,
+  generateManualMeetingBrief
+} from "../integrations/gemini.js";
 
 const sanitizeFilename = (filename) => (
   path.basename(filename).replace(/[\u0000-\u001f]/g, "").slice(0, 255)
@@ -19,10 +22,10 @@ const isSupportedDocument = (file) => {
   return false;
 };
 
-const getGeminiErrorMessage = (error) => {
+const getGeminiErrorMessage = (error, requestType = "document") => {
   const status = Number(error.status);
   if (status === 400) {
-    return "Gemini rejected the document request. Check the document format and Gemini model configuration.";
+    return `Gemini rejected the ${requestType} request. Check the model and request configuration.`;
   }
   if (status === 401 || status === 403) {
     return "Gemini rejected the API credentials or access. Check GEMINI_API_KEY and its API restrictions.";
@@ -107,6 +110,71 @@ export const createDocumentBrief = async (req, res) => {
     });
   } catch (error) {
     console.error("Save document brief error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "The brief was generated, but could not be saved."
+    });
+  }
+};
+
+export const createManualMeetingBrief = async (req, res) => {
+  const { title, topic = "", description = "" } = req.body ?? {};
+  if (typeof title !== "string" || !title.trim() || title.trim().length > 255) {
+    return res.status(400).json({
+      success: false,
+      message: "A meeting title of 1 to 255 characters is required"
+    });
+  }
+  if (
+    typeof topic !== "string" || topic.length > 2000 ||
+    typeof description !== "string" || description.length > 10000
+  ) {
+    return res.status(400).json({
+      success: false,
+      message: "Meeting details are invalid"
+    });
+  }
+
+  let brief;
+  try {
+    brief = await generateManualMeetingBrief({
+      title: title.trim(),
+      topic: topic.trim(),
+      description: description.trim()
+    });
+  } catch (error) {
+    if (error.statusCode === 503) {
+      return res.status(503).json({ success: false, message: error.message });
+    }
+    console.error("Generate manual meeting brief error:", error);
+    return res.status(502).json({
+      success: false,
+      message: getGeminiErrorMessage(error, "meeting brief")
+    });
+  }
+
+  const sourceFilename = "Manual meeting details";
+  try {
+    const documentResult = await pool.query(
+      `INSERT INTO documents (created_by, document_title, source_filename, generated_brief)
+       VALUES ($1, $2, $3, $4)
+       RETURNING id, created_at AS "createdAt"`,
+      [req.user.id, brief.title, sourceFilename, JSON.stringify(brief)]
+    );
+    return res.status(201).json({
+      success: true,
+      message: "Document brief created and saved",
+      document: {
+        ...documentResult.rows[0],
+        requestId: null,
+        status: "READY",
+        title: brief.title,
+        sourceFilename,
+        brief
+      }
+    });
+  } catch (error) {
+    console.error("Save manual meeting brief error:", error);
     return res.status(500).json({
       success: false,
       message: "The brief was generated, but could not be saved."

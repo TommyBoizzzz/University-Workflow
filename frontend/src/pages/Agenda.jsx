@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { downloadWordDocument } from "../utils/wordExport.js";
 
+const AGENDA_PAGE_SIZE = 6;
+
 function formatMeetingDate(value) {
   if (!value) return "Date not selected";
   return new Intl.DateTimeFormat(undefined, {
@@ -12,6 +14,8 @@ function formatMeetingDate(value) {
 
 function Agenda({ requests, isLoading }) {
   const [selectedRequestId, setSelectedRequestId] = useState(null);
+  const [agendaSearch, setAgendaSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const agendas = requests.filter((request) => (
@@ -19,7 +23,27 @@ function Agenda({ requests, isLoading }) {
     request.agenda &&
     Array.isArray(request.agenda.items)
   ));
-  const selectedRequest = agendas.find((request) => request.id === selectedRequestId) || agendas[0];
+  const query = agendaSearch.trim().toLocaleLowerCase();
+  const filteredAgendas = agendas.filter((request) => (
+    [
+      request.title,
+      request.agenda.title,
+      request.status,
+      formatMeetingDate(request.meetingDate),
+    ].some((value) => String(value || "").toLocaleLowerCase().includes(query))
+  ));
+  const pageCount = Math.max(1, Math.ceil(filteredAgendas.length / AGENDA_PAGE_SIZE));
+  const currentPageNumber = Math.min(currentPage, pageCount);
+  const visibleAgendas = filteredAgendas.slice(
+    (currentPageNumber - 1) * AGENDA_PAGE_SIZE,
+    currentPageNumber * AGENDA_PAGE_SIZE,
+  );
+  const firstVisibleAgenda = filteredAgendas.length
+    ? (currentPageNumber - 1) * AGENDA_PAGE_SIZE + 1
+    : 0;
+  const lastVisibleAgenda = Math.min(currentPageNumber * AGENDA_PAGE_SIZE, filteredAgendas.length);
+  const selectedRequest = visibleAgendas.find((request) => request.id === selectedRequestId)
+    || visibleAgendas[0];
   const agenda = selectedRequest?.agenda;
 
   const handleExportAgenda = async (request, format) => {
@@ -69,39 +93,89 @@ function Agenda({ requests, isLoading }) {
                 <h3>Your meeting agendas</h3>
               </div>
             </div>
-            <div className="document-brief-list">
-              {agendas.map((request) => (
-                <div
-                  className={`meeting-material-row ${selectedRequest?.id === request.id ? "active" : ""}`}
-                  key={request.id}
-                >
-                  <button
-                    className="meeting-material-select"
-                    type="button"
-                    aria-pressed={selectedRequest?.id === request.id}
-                    onClick={() => setSelectedRequestId(request.id)}
-                  >
-                    <span className="document-brief-icon" aria-hidden="true">≡</span>
-                    <span>
-                      <strong>{request.agenda.title || request.title}</strong>
-                      <small>{formatMeetingDate(request.meetingDate)} · {request.status}</small>
-                    </span>
-                  </button>
-                  <div className="meeting-material-actions">
-                    <button
-                      className="meeting-material-action export"
-                      type="button"
-                      onClick={() => handleExportAgenda(request, "pdf")}
-                    >
-                      Export
-                    </button>
-                  </div>
-                </div>
-              ))}
+            <div className="user-directory-toolbar documents-search-toolbar">
+              <label className="user-search" htmlFor="agenda-search">
+                <span aria-hidden="true">⌕</span>
+                <input
+                  id="agenda-search"
+                  type="search"
+                  value={agendaSearch}
+                  onChange={(event) => {
+                    setAgendaSearch(event.target.value);
+                    setCurrentPage(1);
+                  }}
+                  placeholder="Search title, date, status..."
+                />
+              </label>
+              <span className="user-result-count">
+                Showing {firstVisibleAgenda}–{lastVisibleAgenda} of {filteredAgendas.length}
+              </span>
             </div>
+            {filteredAgendas.length === 0 ? (
+              <div className="calendar-empty">
+                <span aria-hidden="true">⌕</span>
+                <strong>No matching agendas</strong>
+                <p>Try a different title, date, or status.</p>
+              </div>
+            ) : (
+              <>
+                <div className="document-brief-list">
+                  {visibleAgendas.map((request) => (
+                    <div
+                      className={`meeting-material-row ${selectedRequest?.id === request.id ? "active" : ""}`}
+                      key={request.id}
+                    >
+                      <button
+                        className="meeting-material-select"
+                        type="button"
+                        aria-pressed={selectedRequest?.id === request.id}
+                        onClick={() => setSelectedRequestId(request.id)}
+                      >
+                        <span className="document-brief-icon" aria-hidden="true">≡</span>
+                        <span>
+                          <strong>{request.agenda.title || request.title}</strong>
+                          <small>{formatMeetingDate(request.meetingDate)} · {request.status}</small>
+                        </span>
+                      </button>
+                      <div className="meeting-material-actions">
+                        <button
+                          className="meeting-material-action export"
+                          type="button"
+                          onClick={() => handleExportAgenda(request, "pdf")}
+                        >
+                          Export
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {pageCount > 1 && (
+                  <nav className="documents-pagination" aria-label="Saved agenda pages">
+                    <button
+                      className="documents-page-button"
+                      type="button"
+                      onClick={() => setCurrentPage(Math.max(1, currentPageNumber - 1))}
+                      disabled={currentPageNumber === 1}
+                    >
+                      Previous
+                    </button>
+                    <span>Page {currentPageNumber} of {pageCount}</span>
+                    <button
+                      className="documents-page-button"
+                      type="button"
+                      onClick={() => setCurrentPage(Math.min(pageCount, currentPageNumber + 1))}
+                      disabled={currentPageNumber === pageCount}
+                    >
+                      Next
+                    </button>
+                  </nav>
+                )}
+              </>
+            )}
           </section>
 
-          <article className="document-brief-result">
+          {selectedRequest && agenda && (
+            <article className="document-brief-result">
             <div className="document-result-heading">
               <div>
                 <p className="documents-kicker">MEETING AGENDA</p>
@@ -171,7 +245,8 @@ function Agenda({ requests, isLoading }) {
                 </ul>
               </section>
             )}
-          </article>
+            </article>
+          )}
         </div>
       )}
     </div>

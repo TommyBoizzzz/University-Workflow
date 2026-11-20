@@ -8,7 +8,10 @@ import {
 } from '../services/requestService.js'
 import { getCurrentUser } from '../services/authService.js'
 import { getAvailability, getScheduleRecommendations } from '../services/calendarService.js'
-import { createDocumentBrief } from '../services/documentService.js'
+import {
+  createDocumentBrief,
+  createManualMeetingBrief,
+} from '../services/documentService.js'
 import { downloadWordDocument } from '../utils/wordExport.js'
 import ThemeToggle from '../components/ThemeToggle.jsx'
 import Agenda from './Agenda.jsx'
@@ -39,6 +42,7 @@ const navigation = [
   { id: 'approvals', path: '/approvals', label: 'Approvals', icon: '✓', permission: ['approvals', 'read'] },
   { id: 'users', path: '/users', label: 'Users', icon: '♙', permission: ['users', 'read'] },
 ]
+const REQUEST_LIST_PAGE_SIZE = 6
 
 const initialForm = { title: '', topic: '', description: '', meetingDate: '', meetingStart: '', agenda: null }
 
@@ -228,20 +232,6 @@ function Dashboard({ user, theme, onToggleTheme, onUserUpdate, onSignOut }) {
     [requests],
   )
   const recentRequests = requests.slice(0, 5)
-  const draftFlowReport = documentBrief && form.agenda
-    ? {
-        request: {
-          title: form.title || documentBrief.title,
-          topic: form.topic,
-          meetingDate: form.meetingDate,
-          meetingStart: form.meetingStart,
-        },
-        fileName: documentFile?.name || 'Uploaded document',
-        brief: documentBrief,
-        agenda: form.agenda,
-        submitted: false,
-      }
-    : null
   const visibleNavigation = navigation.filter(
     (item) => (item.id !== 'approvals' || canReadRequests)
       && (!item.permission || hasPermission(
@@ -255,8 +245,8 @@ function Dashboard({ user, theme, onToggleTheme, onUserUpdate, onSignOut }) {
     event.preventDefault()
     setError('')
     setSuccessMessage('')
-    if (requestMethod === 'document' && (!documentBrief || !form.agenda)) {
-      setError('Read the document and create its agenda before submitting this request.')
+    if (!documentBrief || !documentId || !form.agenda) {
+      setError('Create a brief and agenda before submitting this request.')
       return
     }
     setIsSubmitting(true)
@@ -268,8 +258,8 @@ function Dashboard({ user, theme, onToggleTheme, onUserUpdate, onSignOut }) {
         description: form.description,
         meetingDate: form.meetingDate,
         meetingStart: form.meetingStart,
-        ...(form.agenda ? { agenda: form.agenda } : {}),
-        ...(requestMethod === 'document' && documentId ? { documentId } : {}),
+        agenda: form.agenda,
+        documentId,
       })
       if (requestMethod === 'document' && documentBrief && form.agenda) {
         setCompletedFlowReport({
@@ -298,6 +288,12 @@ function Dashboard({ user, theme, onToggleTheme, onUserUpdate, onSignOut }) {
 
   const handleGenerateMeetingPlan = async () => {
     setError('')
+    if (!documentBrief || !documentId) {
+      setError(requestMethod === 'document'
+        ? 'Read the document before creating its agenda.'
+        : 'Create a brief from your meeting details before creating the agenda.')
+      return
+    }
     setIsMeetingPlanGenerating(true)
     const meetingDetails = {
       title: form.title,
@@ -376,18 +372,59 @@ function Dashboard({ user, theme, onToggleTheme, onUserUpdate, onSignOut }) {
     }
   }
 
+  const handleReadMeetingDetails = async () => {
+    setError('')
+    setIsDocumentAnalyzing(true)
+    try {
+      const result = await createManualMeetingBrief({
+        title: form.title,
+        topic: form.topic,
+        description: form.description,
+      })
+      setDocumentBrief(result.document.brief)
+      setDocumentId(result.document.id)
+    } catch (briefError) {
+      setError(briefError.message || 'Unable to create a brief from your meeting details.')
+    } finally {
+      setIsDocumentAnalyzing(false)
+    }
+  }
+
   const updateMeetingDetails = (field, value) => {
     setForm((previous) => ({
       ...previous,
       [field]: value,
       ...(['title', 'topic', 'description'].includes(field) ? { agenda: null } : {}),
     }))
+    if (requestMethod === 'form' && ['title', 'topic', 'description'].includes(field)) {
+      setDocumentBrief(null)
+      setDocumentId(null)
+    }
     setScheduleRecommendations([])
   }
 
   const applyMeetingTemplate = (template) => {
     setForm((previous) => ({ ...previous, ...template.form, agenda: null }))
+    if (requestMethod === 'form') {
+      setDocumentBrief(null)
+      setDocumentId(null)
+    }
     setScheduleRecommendations([])
+  }
+
+  const selectRequestMethod = (method) => {
+    setRequestMethod(method)
+    setDocumentFile(null)
+    setDocumentFocus('')
+    setDocumentBrief(null)
+    setDocumentId(null)
+    setForm((previous) => ({
+      ...previous,
+      title: '',
+      topic: '',
+      description: '',
+      agenda: null,
+    }))
   }
 
   const handleReview = async (requestId, status) => {
@@ -654,6 +691,7 @@ function Dashboard({ user, theme, onToggleTheme, onUserUpdate, onSignOut }) {
                   </div>
                   <RequestList
                     requests={requests}
+                    enableSearchPagination
                     isLoading={isLoading}
                     isTeacher={isTeacher}
                     canReview={canReview}
@@ -687,6 +725,7 @@ function Dashboard({ user, theme, onToggleTheme, onUserUpdate, onSignOut }) {
               </div>
               <RequestList
                 requests={requests.filter((request) => request.status === 'PENDING')}
+                enableSearchPagination
                 isLoading={isLoading}
                 isTeacher={isTeacher}
                 canReview={canReview}
@@ -762,15 +801,19 @@ function Dashboard({ user, theme, onToggleTheme, onUserUpdate, onSignOut }) {
             <form onSubmit={handleCreateRequest}>
               <fieldset className="request-method-picker">
                 <legend>Choose how to prepare your request</legend>
-                <label className={requestMethod === 'form' ? 'selected' : ''}>
+                <label className={`${requestMethod === 'form' ? 'selected' : ''} ${!canCreateBrief ? 'unavailable' : ''}`}>
                   <input
                     type="radio"
                     name="request-method"
                     value="form"
                     checked={requestMethod === 'form'}
-                    onChange={() => setRequestMethod('form')}
+                    disabled={!canCreateBrief}
+                    onChange={() => selectRequestMethod('form')}
                   />
-                  <span><strong>Option 1: Fill in this form</strong><small>Enter the meeting details yourself.</small></span>
+                  <span>
+                    <strong>Option 1: Fill in this form</strong>
+                    <small>{canCreateBrief ? 'Enter details yourself to create a saved brief and agenda.' : 'Documents: Create permission is required.'}</small>
+                  </span>
                 </label>
                 <label className={`${requestMethod === 'document' ? 'selected' : ''} ${!canCreateBrief ? 'unavailable' : ''}`}>
                   <input
@@ -779,7 +822,7 @@ function Dashboard({ user, theme, onToggleTheme, onUserUpdate, onSignOut }) {
                     value="document"
                     checked={requestMethod === 'document'}
                     disabled={!canCreateBrief}
-                    onChange={() => setRequestMethod('document')}
+                    onChange={() => selectRequestMethod('document')}
                   />
                   <span>
                     <strong>Option 2: Use a document</strong>
@@ -855,12 +898,36 @@ function Dashboard({ user, theme, onToggleTheme, onUserUpdate, onSignOut }) {
 
               {requestMethod === 'form' && (
                 <>
+                  <MeetingWorkflowSteps
+                    inputLabel="Enter details"
+                    file={Boolean(form.title.trim())}
+                    brief={documentBrief}
+                    agenda={form.agenda}
+                    meetingStart={form.meetingStart}
+                  />
                   <QuickMeetingTemplates onSelect={applyMeetingTemplate} disabled={isMeetingPlanGenerating} />
                   <MeetingDetailFields
                     form={form}
                     onUpdate={updateMeetingDetails}
                     disabled={isMeetingPlanGenerating}
                   />
+                  <p className="meeting-document-privacy">Your meeting details are sent to Google Gemini to create a brief, which is saved in Documents.</p>
+                  {!documentBrief && (
+                    <button
+                      className="secondary-action document-agenda-button"
+                      type="button"
+                      onClick={handleReadMeetingDetails}
+                      disabled={!form.title.trim() || isDocumentAnalyzing || isSubmitting}
+                    >
+                      {isDocumentAnalyzing ? 'Creating brief...' : 'Read input & create brief'}
+                    </button>
+                  )}
+                  {documentBrief && (
+                    <div className="meeting-document-summary">
+                      <strong>Meeting details read: {documentBrief.title}</strong>
+                      <DocumentBriefDetails brief={documentBrief} />
+                    </div>
+                  )}
                 </>
               )}
 
@@ -921,7 +988,7 @@ function Dashboard({ user, theme, onToggleTheme, onUserUpdate, onSignOut }) {
                   className="secondary-action"
                   type="button"
                   onClick={handleGenerateMeetingPlan}
-                  disabled={!form.title.trim() || !form.meetingDate || isAvailabilityLoading || availableSlots.length === 0 || isMeetingPlanGenerating || isSubmitting || isDocumentAnalyzing}
+                  disabled={!documentBrief || !documentId || !form.title.trim() || !form.meetingDate || isAvailabilityLoading || availableSlots.length === 0 || isMeetingPlanGenerating || isSubmitting || isDocumentAnalyzing}
                 >
                   {isMeetingPlanGenerating
                     ? 'Building your meeting plan...'
@@ -935,30 +1002,10 @@ function Dashboard({ user, theme, onToggleTheme, onUserUpdate, onSignOut }) {
               {form.agenda && (
                 <AgendaPreview agenda={form.agenda} />
               )}
-              {draftFlowReport && (
-                <section className="meeting-process-export" aria-label="Export agenda and document PDFs">
-                  <div>
-                    <strong>Export your PDFs</strong>
-                    <span>Choose the agenda, document brief, or both.</span>
-                  </div>
-                  <div className="meeting-process-export-actions">
-                    <button className="secondary-action" type="button" onClick={() => exportCompletedFlow('agenda', draftFlowReport)}>
-                      Export agenda PDF
-                    </button>
-                    <button className="secondary-action" type="button" onClick={() => exportCompletedFlow('document', draftFlowReport)}>
-                      Export document PDF
-                    </button>
-                    <button className="secondary-action" type="button" onClick={() => exportCompletedFlow('combined', draftFlowReport)}>
-                      Export agenda with document PDF
-                    </button>
-                  </div>
-                  <small>In the print dialog, choose “Save as PDF”.</small>
-                </section>
-              )}
               {error && <div className="form-error" role="alert">{error}</div>}
               <div className="modal-actions">
                 <button className="secondary-action" type="button" onClick={() => setIsCreateOpen(false)} disabled={isSubmitting}>Cancel</button>
-                <button className="primary-action request-meeting-action" type="submit" disabled={isSubmitting || isDocumentAnalyzing || !form.meetingStart || (requestMethod === 'document' && (!documentBrief || !form.agenda))}>{isSubmitting ? 'Submitting...' : 'Submit meeting request'}</button>
+                <button className="primary-action request-meeting-action" type="submit" disabled={isSubmitting || isDocumentAnalyzing || !form.meetingStart || !documentBrief || !documentId || !form.agenda}>{isSubmitting ? 'Submitting...' : 'Submit meeting request'}</button>
               </div>
             </form>
           </section>
@@ -971,9 +1018,9 @@ function Dashboard({ user, theme, onToggleTheme, onUserUpdate, onSignOut }) {
   )
 }
 
-function MeetingWorkflowSteps({ file, brief, agenda, meetingStart }) {
+function MeetingWorkflowSteps({ inputLabel = 'Upload document', file, brief, agenda, meetingStart }) {
   const steps = [
-    { title: 'Upload document', complete: Boolean(file) },
+    { title: inputLabel, complete: Boolean(file) },
     { title: 'Read & build brief', complete: Boolean(brief) },
     { title: 'Create agenda', complete: Boolean(agenda) },
     { title: 'Review & submit', complete: false, ready: Boolean(agenda && meetingStart) },
@@ -981,7 +1028,7 @@ function MeetingWorkflowSteps({ file, brief, agenda, meetingStart }) {
   const currentStep = steps.findIndex((step) => !step.complete)
 
   return (
-    <ol className="meeting-process-steps" aria-label="Document meeting request workflow">
+    <ol className="meeting-process-steps" aria-label="Meeting request workflow">
       {steps.map((step, index) => (
         <li
           className={`${step.complete ? 'complete' : ''} ${index === currentStep ? 'current' : ''}`}
@@ -1164,6 +1211,7 @@ function MeetingDetailFields({ form, onUpdate, disabled = false }) {
 
 function RequestList({
   requests,
+  enableSearchPagination = false,
   isLoading,
   isTeacher,
   canReview,
@@ -1175,6 +1223,39 @@ function RequestList({
   isApprovalQueue = false,
   workingRequestId,
 }) {
+  const [search, setSearch] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+  const filteredRequests = useMemo(() => {
+    const query = search.trim().toLowerCase()
+    if (!enableSearchPagination || !query) return requests
+    return requests.filter((request) => (
+      [
+        request.title,
+        request.topic,
+        request.description,
+        request.submittedBy,
+        request.department,
+        request.type,
+        request.status,
+        request.meetingDate ? formatDate(request.meetingDate) : '',
+      ].filter(Boolean).join(' ').toLowerCase().includes(query)
+    ))
+  }, [enableSearchPagination, requests, search])
+  const pageCount = enableSearchPagination
+    ? Math.max(1, Math.ceil(filteredRequests.length / REQUEST_LIST_PAGE_SIZE))
+    : 1
+  const currentPageNumber = Math.min(currentPage, pageCount)
+  const firstVisibleRequest = filteredRequests.length
+    ? (currentPageNumber - 1) * REQUEST_LIST_PAGE_SIZE + 1
+    : 0
+  const lastVisibleRequest = Math.min(currentPageNumber * REQUEST_LIST_PAGE_SIZE, filteredRequests.length)
+  const visibleRequests = enableSearchPagination
+    ? filteredRequests.slice(
+      (currentPageNumber - 1) * REQUEST_LIST_PAGE_SIZE,
+      currentPageNumber * REQUEST_LIST_PAGE_SIZE,
+    )
+    : filteredRequests
+
   if (isLoading) {
     return <div className="list-message"><span className="small-spinner" /> Loading requests...</div>
   }
@@ -1194,19 +1275,48 @@ function RequestList({
   }
 
   return (
-    <div className="request-grid-scroll">
-      <table className="request-grid">
-        <thead>
-          <tr>
-            <th scope="col">Request</th>
-            <th scope="col">Meeting</th>
-            <th scope="col">Status</th>
-            <th scope="col">Submitted</th>
-            <th scope="col">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {requests.map((request) => {
+    <>
+      {enableSearchPagination && (
+        <div className="user-directory-toolbar documents-search-toolbar">
+          <label className="user-search" htmlFor="request-list-search">
+            <span aria-hidden="true">⌕</span>
+            <input
+              id="request-list-search"
+              type="search"
+              value={search}
+              onChange={(event) => {
+                setSearch(event.target.value)
+                setCurrentPage(1)
+              }}
+              placeholder="Search title, department, status..."
+            />
+          </label>
+          <span className="user-result-count">
+            Showing {firstVisibleRequest}–{lastVisibleRequest} of {filteredRequests.length}
+          </span>
+        </div>
+      )}
+      {filteredRequests.length === 0 ? (
+        <div className="empty-state">
+          <span className="empty-state-icon">⌕</span>
+          <strong>No matching requests</strong>
+          <span>Try a different title, department, or status.</span>
+        </div>
+      ) : (
+        <>
+          <div className="request-grid-scroll">
+            <table className="request-grid">
+              <thead>
+                <tr>
+                  <th scope="col">Request</th>
+                  <th scope="col">Meeting</th>
+                  <th scope="col">Status</th>
+                  <th scope="col">Submitted</th>
+                  <th scope="col">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {visibleRequests.map((request) => {
             const isWorking = workingRequestId === request.id
             const canDelete = request.status === 'PENDING'
               && (isSuperAdmin || String(request.teacherId) === String(userId))
@@ -1277,10 +1387,34 @@ function RequestList({
                 </td>
               </tr>
             )
-          })}
-        </tbody>
-      </table>
-    </div>
+                })}
+              </tbody>
+            </table>
+          </div>
+          {enableSearchPagination && pageCount > 1 && (
+            <nav className="documents-pagination" aria-label="Request pages">
+              <button
+                className="documents-page-button"
+                type="button"
+                onClick={() => setCurrentPage(Math.max(1, currentPageNumber - 1))}
+                disabled={currentPageNumber === 1}
+              >
+                Previous
+              </button>
+              <span>Page {currentPageNumber} of {pageCount}</span>
+              <button
+                className="documents-page-button"
+                type="button"
+                onClick={() => setCurrentPage(Math.min(pageCount, currentPageNumber + 1))}
+                disabled={currentPageNumber === pageCount}
+              >
+                Next
+              </button>
+            </nav>
+          )}
+        </>
+      )}
+    </>
   )
 }
 

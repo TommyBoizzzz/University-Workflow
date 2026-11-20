@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
 
+const REQUEST_PAGE_SIZE = 6;
+
 function formatRequestDate(value) {
   if (!value) return "Date not selected";
   return new Intl.DateTimeFormat(undefined, {
@@ -20,13 +22,14 @@ function TeacherRequests({
 }) {
   const [activeFilter, setActiveFilter] = useState("ALL");
   const [search, setSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
   const counts = {
     ALL: requests.length,
     PENDING: requests.filter((request) => request.status === "PENDING").length,
     APPROVED: requests.filter((request) => request.status === "APPROVED").length,
     REJECTED: requests.filter((request) => request.status === "REJECTED").length
   };
-  const visibleRequests = useMemo(() => {
+  const filteredRequests = useMemo(() => {
     const query = search.trim().toLowerCase();
     return requests.filter((request) => {
       const matchesStatus = activeFilter === "ALL" || request.status === activeFilter;
@@ -40,6 +43,12 @@ function TeacherRequests({
       return matchesStatus && (!query || searchableText.includes(query));
     });
   }, [activeFilter, requests, search]);
+  const pageCount = Math.max(1, Math.ceil(filteredRequests.length / REQUEST_PAGE_SIZE));
+  const currentPageNumber = Math.min(currentPage, pageCount);
+  const visibleRequests = filteredRequests.slice(
+    (currentPageNumber - 1) * REQUEST_PAGE_SIZE,
+    currentPageNumber * REQUEST_PAGE_SIZE,
+  );
 
   return (
     <div className="teacher-requests-page">
@@ -80,7 +89,7 @@ function TeacherRequests({
             <p className="teacher-requests-eyebrow"><span /> REQUEST ACTIVITY</p>
             <h3>Your submissions</h3>
           </div>
-          {!isLoading && <span className="teacher-request-total">{visibleRequests.length} shown</span>}
+          {!isLoading && <span className="teacher-request-total">{filteredRequests.length} shown</span>}
         </div>
 
         <div className="teacher-request-toolbar">
@@ -91,7 +100,10 @@ function TeacherRequests({
                 key={filter}
                 type="button"
                 aria-pressed={activeFilter === filter}
-                onClick={() => setActiveFilter(filter)}
+                onClick={() => {
+                  setActiveFilter(filter);
+                  setCurrentPage(1);
+                }}
               >
                 {filter === "ALL" ? "All requests" : filter[0] + filter.slice(1).toLowerCase()}
                 <span>{counts[filter]}</span>
@@ -103,7 +115,10 @@ function TeacherRequests({
             <input
               type="search"
               value={search}
-              onChange={(event) => setSearch(event.target.value)}
+              onChange={(event) => {
+                setSearch(event.target.value);
+                setCurrentPage(1);
+              }}
               placeholder="Search requests"
               aria-label="Search requests"
             />
@@ -112,15 +127,16 @@ function TeacherRequests({
 
         {isLoading ? (
           <div className="teacher-request-empty"><span className="small-spinner" /> Loading your requests...</div>
-        ) : visibleRequests.length === 0 ? (
+        ) : filteredRequests.length === 0 ? (
           <div className="teacher-request-empty">
             <span className="teacher-request-empty-icon" aria-hidden="true">{requests.length ? "⌕" : "↗"}</span>
             <strong>{requests.length ? "No matching requests" : "Your workflow starts here"}</strong>
             <p>{requests.length ? "Try another search or status filter." : "Requests you submit will appear here, ready to track and manage."}</p>
           </div>
         ) : (
-          <div className="teacher-request-list">
-            {visibleRequests.map((request) => {
+          <>
+            <div className="teacher-request-list">
+              {visibleRequests.map((request) => {
               const isWorking = workingRequestId === request.id;
               const isMeeting = request.type === "MEETING";
               const canDelete = request.status === "PENDING"
@@ -197,8 +213,30 @@ function TeacherRequests({
                   </div>
                 </article>
               );
-            })}
-          </div>
+              })}
+            </div>
+            {pageCount > 1 && (
+              <nav className="documents-pagination" aria-label="Request pages">
+                <button
+                  className="documents-page-button"
+                  type="button"
+                  onClick={() => setCurrentPage(Math.max(1, currentPageNumber - 1))}
+                  disabled={currentPageNumber === 1}
+                >
+                  Previous
+                </button>
+                <span>Page {currentPageNumber} of {pageCount}</span>
+                <button
+                  className="documents-page-button"
+                  type="button"
+                  onClick={() => setCurrentPage(Math.min(pageCount, currentPageNumber + 1))}
+                  disabled={currentPageNumber === pageCount}
+                >
+                  Next
+                </button>
+              </nav>
+            )}
+          </>
         )}
       </section>
     </div>
